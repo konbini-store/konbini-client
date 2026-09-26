@@ -23,7 +23,7 @@ public class Prefs {
     }
 
     public static String getServer(Context c) {
-        return sp(c).getString("server", "apk.pyt.pp.ua");
+        return sp(c).getString("server", "konbini.lol");
     }
 
     public static void setServer(Context c, String host) {

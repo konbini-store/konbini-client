@@ -7,7 +7,7 @@ public class Api {
 
 	public static String baseUrl(Context c) {
 	    String host = Prefs.getServer(c);
-	    if (host == null) host = "";
+
 	    host = host.trim();
 
 	    if (host.length() == 0) host = "konbini.lol";
