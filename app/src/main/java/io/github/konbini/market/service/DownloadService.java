@@ -3,6 +3,7 @@ package io.github.konbini.market.service;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
@@ -28,12 +29,14 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
+import android.util.Log;
 import android.widget.RemoteViews;
 
 public class DownloadService extends Service {
     public static final String ACTION_START = "io.github.konbini.market.DOWNLOAD_START";
     public static final String ACTION_CANCEL = "io.github.konbini.market.DOWNLOAD_CANCEL";
     public static final String ACTION_PROGRESS = "io.github.konbini.market.DOWNLOAD_PROGRESS";
+    private static final String TAG = "DownloadService";
     private static final String PREFS = "download_state";
 
     private static class TaskInfo {
@@ -345,11 +348,38 @@ public class DownloadService extends Service {
             notifyProgress(t);
 
             URL url = new URL(urlStr);
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setInstanceFollowRedirects(true);
-            conn.setConnectTimeout(12000);
-            conn.setReadTimeout(30000);
-            conn.connect();
+            int redirectCount = 0;
+            while (true) {
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setInstanceFollowRedirects(false);
+                conn.setConnectTimeout(12000);
+                conn.setReadTimeout(30000);
+                conn.connect();
+
+                int responseCode = conn.getResponseCode();
+                if (responseCode == HttpURLConnection.HTTP_MOVED_PERM
+                        || responseCode == HttpURLConnection.HTTP_MOVED_TEMP
+                        || responseCode == HttpURLConnection.HTTP_SEE_OTHER
+                        || responseCode == 307 || responseCode == 308) {
+                    if (redirectCount >= 10) throw new IOException("Too many redirects");
+                    String location = conn.getHeaderField("Location");
+                    if (location == null || location.trim().length() == 0) {
+                        throw new IOException("Redirect response missing Location header");
+                    }
+                    URL redirectUrl = new URL(url, location);
+                        Log.i(TAG, "Following HTTP " + responseCode + " redirect to "
+                            + redirectUrl.getProtocol() + "://" + redirectUrl.getHost());
+                    conn.disconnect();
+                    conn = null;
+                    url = redirectUrl;
+                    redirectCount++;
+                    continue;
+                }
+                if (responseCode < 200 || responseCode >= 300) {
+                    throw new IOException("Download failed with HTTP status " + responseCode);
+                }
+                break;
+            }
 
             int len = conn.getContentLength();
             in = conn.getInputStream();
@@ -428,6 +458,11 @@ public class DownloadService extends Service {
                 sendStateBroadcast(t, true, false, false);
             }
         } catch (Exception e) {
+            if (t.cancel) {
+                Log.i(TAG, "Download cancelled for app " + t.appId, e);
+            } else {
+                Log.e(TAG, "Download failed for app " + t.appId, e);
+            }
             TASKS.remove(t.appId);
             persistTasks();
             try {
