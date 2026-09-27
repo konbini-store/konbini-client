@@ -24,6 +24,7 @@ public class SettingsActivity extends Activity {
     private EditText socialServer;
     private CheckBox enableAnalytics;
     private CheckBox chkAutoInstallRoot;
+    private Button clearCacheButton;
     private boolean ignoreRootToggle = false;
 
     protected void onCreate(Bundle b) {
@@ -37,6 +38,7 @@ public class SettingsActivity extends Activity {
         socialServer = (EditText) findViewById(R.id.socialServerUrl);
         enableAnalytics = (CheckBox) findViewById(R.id.checkBox);
         chkAutoInstallRoot = (CheckBox) findViewById(R.id.chkAutoInstallRoot);
+        clearCacheButton = (Button) findViewById(R.id.clearCacheButton);
 
         ArrayAdapter<String> a = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item,
                 new String[]{getString(R.string.lang_ru), getString(R.string.lang_en)});
@@ -94,6 +96,14 @@ public class SettingsActivity extends Activity {
                 LocaleHelper.applySavedLocale(SettingsActivity.this);
                 Toast.makeText(SettingsActivity.this, R.string.save, Toast.LENGTH_SHORT).show();
                 finish();
+            }
+        });
+
+        clearCacheButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Prefs.clearCache(SettingsActivity.this);
+                Toast.makeText(SettingsActivity.this, "Cache cleared", Toast.LENGTH_SHORT).show();
             }
         });
     }
