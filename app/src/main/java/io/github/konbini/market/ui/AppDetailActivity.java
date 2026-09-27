@@ -390,8 +390,8 @@ public class AppDetailActivity extends Activity {
                 AppDetailActivity.this.app = o;
                 String name = o.name;
                 final String dev = o.author;
-                final String desc = o.description;
-                final String shortDesc = desc.substring(0, 100) + "...";
+                final String desc = o.description == null ? "" : o.description;
+                final String shortDesc = desc.length() > 100 ? desc.substring(0, 100) + "..." : desc;
                 String icon = o.icon;
                 currentIconFile = icon;
 
