@@ -507,7 +507,7 @@ public class MainActivity extends Activity {
                     .setTitle("Analytics")
                     .setMessage("This app sends information about your downloads, as well as periodic information about your device, to the social media server specified in the settings.\n" +
                             "\n" +
-                            "Do you consent to this type of data collection?")
+                            "Do you consent to this type of data collection? You can always change your mind later in the settings.")
 
                     .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
