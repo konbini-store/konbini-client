@@ -49,6 +49,14 @@ public class Prefs {
         sp(c).edit().putString("lang", lang).commit();
     }
 
+    public static Boolean getAnalyticsConsent(Context c) { return sp(c).contains("analytics_consent") ? sp(c).getBoolean("analytics_consent", false) : null; }
+
+    public static void setAnalyticsConsent(Context c, boolean v) { sp(c).edit().putBoolean("analytics_consent", v).commit(); }
+
+    public static String getSocialServer(Context c) { return sp(c).getString("social_server", "http://social.konbini.lol"); }
+
+    public static void setSocialServer(Context c, String v) { sp(c).edit().putString("social_server", v).commit(); }
+
     // ---- AUTH ----
     public static int getUserId(Context c) {
         return sp(c).getInt("user_id", 0);

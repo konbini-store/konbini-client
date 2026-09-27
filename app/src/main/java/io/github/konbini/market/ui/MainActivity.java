@@ -175,7 +175,7 @@ public class MainActivity extends Activity {
             loadTopContent();
         }
         checkClientUpdateIfNeeded();
-        sendAnalyticsIfNeeded();
+        getConsentFromUserThenSendAnalytics();
         scheduleUpdateChecks();
     }
 
@@ -499,9 +499,44 @@ public class MainActivity extends Activity {
         }.execute();
     }
 
+    private void getConsentFromUserThenSendAnalytics() {
+        Boolean consent = Prefs.getAnalyticsConsent(this);
+
+        if (consent == null) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Analytics")
+                    .setMessage("This app sends information about your downloads, as well as periodic information about your device, to the social media server specified in the settings.\n" +
+                            "\n" +
+                            "Do you consent to this type of data collection?")
+
+                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            Prefs.setAnalyticsConsent(MainActivity.this, true);
+                            sendAnalyticsIfAllowed();
+                        }
+                    })
+
+                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Prefs.setAnalyticsConsent(MainActivity.this, false);
+                        }
+                    })
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .show();
+
+        } else if (consent) {
+            sendAnalyticsIfAllowed();
+        }
+    }
+
     // TODO
-    private void sendAnalyticsIfNeeded() {
-        if (true) return;
+    private void sendAnalyticsIfAllowed() {
+        Boolean consent = Prefs.getAnalyticsConsent(this);
+        if (consent == null || !consent) return;
+
+        Log.d("sendAnalytics@Main", "Sending analytics...");
+
         long now = System.currentTimeMillis();
         if (now - Prefs.getLastAnalyticsSentAt(this) < 12L * 60L * 60L * 1000L) return;
         Prefs.setLastAnalyticsSentAt(this, now);
@@ -512,12 +547,15 @@ public class MainActivity extends Activity {
                     JSONObject o = new JSONObject();
                     o.put("api_level", Build.VERSION.SDK_INT);
                     o.put("app_version_code", pi.versionCode);
-                    o.put("app_version_name", pi.versionName == null ? "" : pi.versionName);
-                    o.put("device_model", Build.MODEL == null ? "" : Build.MODEL);
-                    o.put("manufacturer", Build.MANUFACTURER == null ? "" : Build.MANUFACTURER);
+                    o.put("app_version_name", pi.versionName == null ? "<no version name>" : pi.versionName);
+                    o.put("device_model", Build.MODEL == null ? "<no model>" : Build.MODEL);
+                    o.put("manufacturer", Build.MANUFACTURER == null ? "<no manufacturer>" : Build.MANUFACTURER);
                     o.put("lang", java.util.Locale.getDefault().getLanguage());
-                    Http.postJson("", o.toString());
-                } catch (Exception e) { }
+                    Log.d("sendAnalytics@Main", "About to send to "+Prefs.getSocialServer(MainActivity.this) + "/api/putStats"+"...");
+                    Log.d("sendAnalytics@Main", "Response: "+Http.postJson(Prefs.getSocialServer(MainActivity.this) + "/api/putStats", o.toString()));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 return null;
             }
         }.execute();
