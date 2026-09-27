@@ -39,8 +39,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ems="10"
-            android:inputType="textUri"
-            android:text="http://social.konbini.lol" />
+            android:hint="http://social.konbini.lol"
+            android:inputType="textUri" />
 
         <TextView
             android:id="@+id/textView5"
