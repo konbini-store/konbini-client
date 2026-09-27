@@ -34,14 +34,14 @@ public class AppShort {
     public AppShort(JSONObject obj) throws JSONException {
         this.id = obj.getInt("id");
         Log.d("AppShort@36", String.valueOf(this.id));
-        this.name = obj.getString("name");
-        this.api = obj.getInt("api");
+        this.name = obj.optString("name");
+        this.api = obj.optInt("api");
         this.categoryCode = obj.optString("categoryCode", "other_apps");
         this.categoryLabel = obj.optString("categoryLabel", "Other apps");
         this.icon = obj.optString("icon", "");
-        JSONArray abis_json = obj.getJSONArray("abis");
+        JSONArray abis_json = obj.optJSONArray("abis");
         for (int i = 0; i < abis_json.length(); i++) {
-            abis.add(abis_json.getString(i));
+            abis.add(abis_json.optString(i));
         }
         this.description = obj.optString("description", "No description provided.");
         this.is_game = obj.optBoolean("isGame", false);

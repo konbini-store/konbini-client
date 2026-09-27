@@ -25,32 +25,30 @@ public class App {
     public String description = "";
     public SparseArray<AppVersion> versions = new SparseArray<AppVersion>();
     public String categoryId = "";
-    public AppResourceList resources;
 //    public ArrayList<Review> reviews;
 
     public App(JSONObject obj) throws JSONException {
         this.id = obj.getInt("id");
-        this.name = obj.getString("name");
-        this.author = obj.getString("author");
-        this.packageId = obj.getString("packageId");
-        this.description = obj.getString("description");
+        this.name = obj.optString("name");
+        this.author = obj.optString("author");
+        this.packageId = obj.optString("packageId");
+        this.description = obj.optString("description");
 
-        JSONArray versions = obj.getJSONArray("versions");
+        JSONArray versions = obj.optJSONArray("versions");
         Log.d("App", "App versions: "+versions.toString());
         for (int i = 0; i < versions.length(); i++) {
-            Log.d("App", "App version: "+versions.getJSONObject(i));
-            AppVersion version = new AppVersion(versions.getJSONObject(i));
+            Log.d("App", "App version: "+versions.optJSONObject(i));
+            AppVersion version = new AppVersion(versions.optJSONObject(i));
             this.versions.append(version.id, version);
         }
 
-        this.icon = obj.getString("icon");
-        JSONArray screenshots = obj.getJSONArray("screenshots");
+        this.icon = obj.optString("icon");
+        JSONArray screenshots = obj.optJSONArray("screenshots");
         for (int i = 0; i < screenshots.length(); i++) {
             this.screenshots.add(screenshots.getString(i));
         }
 
         this.categoryId = obj.getString("categoryId");
-        this.resources = new AppResourceList(obj.getJSONArray("resources"));
     }
 
     public AppVersion getFirstVersion() {
