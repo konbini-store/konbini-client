@@ -13,6 +13,8 @@ import android.content.Context;
 import android.util.SparseArray;
 import android.widget.TextView;
 
+import org.w3c.dom.Text;
+
 import java.util.Locale;
 
 /**
@@ -46,6 +48,19 @@ public class AppVersionAdapter extends BaseAdapter {
         return versions.keyAt(position);
     }
 
+    private static String formatBytes(long bytes) {
+        if (bytes < 0) return "0 B";
+        if (bytes < 1024) return bytes + " B";
+
+        // Calculates unit magnitude using leading zeros (0 = B, 1 = KB, 2 = MB, etc.)
+        int unitIndex = (63 - Long.numberOfLeadingZeros(bytes)) / 10;
+
+        double size = (double) bytes / (1L << (unitIndex * 10));
+        char unitPrefix = " KMGTPE".charAt(unitIndex);
+
+        return String.format(Locale.ENGLISH, "%.1f %cB", size, unitPrefix);
+    }
+
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHolder holder;
@@ -56,6 +71,7 @@ public class AppVersionAdapter extends BaseAdapter {
             holder.versionText = (TextView) convertView.findViewById(R.id.version_text);
             holder.supportedAndroid = (TextView) convertView.findViewById(R.id.supported_android);
             holder.supportedAbis = (TextView) convertView.findViewById(R.id.supported_abis);
+            holder.appSize = (TextView) convertView.findViewById(R.id.appSizeTextView);
             convertView.setTag(holder);
         } else {
             holder = (ViewHolder) convertView.getTag();
@@ -87,6 +103,8 @@ public class AppVersionAdapter extends BaseAdapter {
 
             holder.supportedAbis.setText(String.format(Locale.ENGLISH,
                     "ABIs: %s", abisList));
+
+            holder.appSize.setText(formatBytes(version.size));
         }
 
         return convertView;
@@ -97,5 +115,6 @@ public class AppVersionAdapter extends BaseAdapter {
         TextView versionText;
         TextView supportedAndroid;
         TextView supportedAbis;
+        TextView appSize;
     }
 }

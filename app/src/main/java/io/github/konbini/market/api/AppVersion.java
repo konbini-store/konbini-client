@@ -22,21 +22,23 @@ public class AppVersion {
     public int versionCode;
     public String versionName;
     public int minSdk;
+    public int size;
     public ArrayList<String> abis = new ArrayList<>();
     public String downloadUrl;
 
     public AppVersion(JSONObject obj) throws JSONException {
         this.id = obj.getInt("id");
-        this.versionCode = obj.getInt("versionCode");
-        this.versionName = obj.getString("versionName");
-        this.minSdk = obj.getInt("minSdk");
+        this.versionCode = obj.optInt("versionCode", 0);
+        this.versionName = obj.optString("versionName", "<no name>");
+        this.minSdk = obj.optInt("minSdk", 0);
+        this.size = obj.optInt("size", 0);
 
-        JSONArray abis_json = obj.getJSONArray("abis");
+        JSONArray abis_json = obj.optJSONArray("abis");
         for (int i = 0; i < abis_json.length(); i++) {
             abis.add(abis_json.getString(i));
         }
 
-        this.downloadUrl = obj.getString("downloadUrl");
+        this.downloadUrl = obj.optString("downloadUrl");
     }
 
     public boolean isSupported() {
