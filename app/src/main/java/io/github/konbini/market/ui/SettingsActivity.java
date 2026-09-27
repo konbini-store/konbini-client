@@ -21,6 +21,8 @@ public class SettingsActivity extends Activity {
     private EditText edtServer;
     private Spinner spnLang;
     private Button btnSave;
+    private EditText socialServer;
+    private CheckBox enableAnalytics;
     private CheckBox chkAutoInstallRoot;
     private boolean ignoreRootToggle = false;
 
@@ -32,6 +34,8 @@ public class SettingsActivity extends Activity {
         edtServer = (EditText) findViewById(R.id.edtServer);
         spnLang = (Spinner) findViewById(R.id.spnLang);
         btnSave = (Button) findViewById(R.id.btnSave);
+        socialServer = (EditText) findViewById(R.id.socialServerUrl);
+        enableAnalytics = (CheckBox) findViewById(R.id.checkBox);
         chkAutoInstallRoot = (CheckBox) findViewById(R.id.chkAutoInstallRoot);
 
         ArrayAdapter<String> a = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item,
@@ -40,6 +44,8 @@ public class SettingsActivity extends Activity {
         spnLang.setAdapter(a);
 
         edtServer.setText(Prefs.getServer(this));
+        socialServer.setText(Prefs.getSocialServer(this));
+        enableAnalytics.setChecked(Boolean.TRUE.equals(Prefs.getAnalyticsConsent(this)));
         String lang = Prefs.getLang(this);
         spnLang.setSelection("en".equals(lang) ? 1 : 0);
 
@@ -71,8 +77,16 @@ public class SettingsActivity extends Activity {
         btnSave.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 String host = edtServer.getText().toString().trim();
-                if (host.length() == 0) host = "94.156.115.120";
+                if (host.length() == 0) host = "http://konbini.lol";
                 Prefs.setServer(SettingsActivity.this, host);
+
+                String socialHost = socialServer.getText().toString().trim();
+                if (socialHost.length() == 0) socialHost = "http://social.konbini.lol";
+                while (socialHost.endsWith("/")) {
+                    socialHost = socialHost.substring(0, socialHost.length() - 1);
+                }
+                Prefs.setSocialServer(SettingsActivity.this, socialHost);
+                Prefs.setAnalyticsConsent(SettingsActivity.this, enableAnalytics.isChecked());
 
                 String sel = (spnLang.getSelectedItemPosition() == 1) ? "en" : "ru";
                 Prefs.setLang(SettingsActivity.this, sel);
