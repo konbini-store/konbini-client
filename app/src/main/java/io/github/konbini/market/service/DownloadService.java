@@ -15,6 +15,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import io.github.konbini.market.R;
+import io.github.konbini.market.net.Http;
 import io.github.konbini.market.ui.AppDetailActivity;
 import io.github.konbini.market.util.LocaleHelper;
 import io.github.konbini.market.util.Prefs;
@@ -29,8 +30,11 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
+import android.os.Build;
 import android.util.Log;
 import android.widget.RemoteViews;
+
+import java.util.Locale;
 
 public class DownloadService extends Service {
     public static final String ACTION_START = "io.github.konbini.market.DOWNLOAD_START";
@@ -113,6 +117,7 @@ public class DownloadService extends Service {
             final int appId = intent.getIntExtra("app_id", -1);
             final String url = intent.getStringExtra("url");
             final String fileName = intent.getStringExtra("file_name");
+            final String appPackage = intent.getStringExtra("app_package");
             final String appName = intent.getStringExtra("app_name");
             final String icon = intent.getStringExtra("icon");
 
@@ -131,7 +136,7 @@ public class DownloadService extends Service {
 
             new Thread(new Runnable() {
                 public void run() {
-                    runDownload(t, url);
+                    runDownload(t, url, appPackage);
                 }
             }).start();
         }
@@ -334,7 +339,7 @@ public class DownloadService extends Service {
         }
     }
 
-    private void runDownload(TaskInfo t, String urlStr) {
+    private void runDownload(TaskInfo t, String urlStr, String appPackage) {
         HttpURLConnection conn = null;
         InputStream in = null;
         FileOutputStream out = null;
@@ -430,6 +435,7 @@ public class DownloadService extends Service {
             }
 
             t.filePath = f.getAbsolutePath();
+            logDownloadIfAllowed(t, appPackage);
 
             if (Prefs.isAutoInstallRoot(this)) {
                 t.installing = true;
@@ -477,6 +483,34 @@ public class DownloadService extends Service {
             try { compatStopForeground(1000 + t.appId); } catch (Exception e) { }
             stopSelf();
         }
+    }
+
+    private void logDownloadIfAllowed(final TaskInfo task, final String appPackage) {
+        if (appPackage == null || appPackage.length() == 0
+                || !Boolean.TRUE.equals(Prefs.getAnalyticsConsent(this))) return;
+
+        final android.content.Context appContext = getApplicationContext();
+        new Thread(new Runnable() {
+            public void run() {
+                if (!Boolean.TRUE.equals(Prefs.getAnalyticsConsent(appContext))) return;
+                try {
+                    JSONObject payload = new JSONObject();
+                    payload.put("app_package", appPackage);
+                    payload.put("package_id", task.appId);
+                    payload.put("file", task.fileName);
+                    payload.put("device_manufacturer", Build.MANUFACTURER == null ? "" : Build.MANUFACTURER);
+                    payload.put("device_model", Build.MODEL == null ? "" : Build.MODEL);
+                    payload.put("device_api", Build.VERSION.SDK_INT);
+                    payload.put("device_locale", Locale.getDefault().toString());
+
+                    String server = Prefs.getSocialServer(appContext);
+                    while (server.endsWith("/")) server = server.substring(0, server.length() - 1);
+                    Http.postJson(appContext, server + "/api/download", payload.toString());
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to log download", e);
+                }
+            }
+        }).start();
     }
 
     private boolean installSilently(String apkPath) {

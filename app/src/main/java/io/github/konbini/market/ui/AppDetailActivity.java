@@ -911,6 +911,7 @@ public class AppDetailActivity extends Activity {
                         i.setAction(DownloadService.ACTION_START);
                         i.putExtra("app_id", appId);
                         i.putExtra("app_name", txtName == null ? "" : String.valueOf(txtName.getText()));
+                        i.putExtra("app_package", app == null ? "" : app.packageId);
                         i.putExtra("icon", currentIconFile == null ? "" : currentIconFile);
                         i.putExtra("url", finalUrl);
                         i.putExtra("file_name", "konbini_" + appId + (selectedVersion.length() > 0 ? ("_" + selectedVersion) : "") + ".apk");
