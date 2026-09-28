@@ -453,18 +453,20 @@ public class MainActivity extends Activity {
 
     // TODO
     private void checkClientUpdateIfNeeded() {
-        if (true) return;
         final boolean ru = isRu();
         new AsyncTask<Void, Void, JSONObject>() {
             protected JSONObject doInBackground(Void... params) {
                 try {
-                    String s = Http.getString("");
+                    String s = Http.getString(MainActivity.this.api.getBaseUrl(MainActivity.this) + "/api/client-latest.json");
                     if (s == null || s.length() == 0) return null;
                     return new JSONObject(s);
                 } catch (Exception e) { return null; }
             }
             protected void onPostExecute(JSONObject o) {
-                if (o == null) return;
+                if (o == null) {
+                    Log.e("clientUpdate", "Error checking for client update: Null response");
+                    return;
+                }
                 try {
                     int latestCode = o.optInt("version_code", 0);
                     String latestName = o.optString("version_name", "");
@@ -474,10 +476,10 @@ public class MainActivity extends Activity {
                     if (latestCode > pi.versionCode && updateUrl != null && updateUrl.length() > 0) {
                         StringBuilder msg = new StringBuilder(getString(R.string.client_update_message));
                         if (latestName != null && latestName.length() > 0) {
-                            msg.append("\\n\\n").append(R.string.version).append(latestName);
+                            msg.append("\n\n").append(getString(R.string.version)).append(" ").append(latestName);
                         }
                         if (notes != null && notes.length() > 0) {
-                            msg.append("\\n\\n").append(getString(R.string.client_update_note_prefix)).append(notes);
+                            msg.append("\n\n").append(getString(R.string.client_update_note_prefix)).append(" ").append(notes);
                         }
                         final String finalUrl = updateUrl;
                         new AlertDialog.Builder(MainActivity.this)
@@ -493,7 +495,9 @@ public class MainActivity extends Activity {
                                 .setNegativeButton(getString(R.string.later), null)
                                 .show();
                     }
-                } catch (Exception e) { }
+                } catch (Exception e) {
+                    Log.e("clientUpdate", "Error checking for client update: " + e.getMessage());
+                }
             }
         }.execute();
     }
