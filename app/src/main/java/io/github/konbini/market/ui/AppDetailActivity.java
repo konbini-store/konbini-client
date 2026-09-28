@@ -111,7 +111,14 @@ public class AppDetailActivity extends Activity {
                 String path = intent.getStringExtra("file_path");
                 if (path != null && hasWindowFocus()) openInstaller(path);
             }
-            if (error || cancelled) hideDownloadUi();
+            if (error) {
+                hideDownloadUi();
+                String message = intent.getStringExtra("error_message");
+                Toast.makeText(AppDetailActivity.this,
+                        "Download failed: " + (message == null ? "Unknown error" : message),
+                        Toast.LENGTH_LONG).show();
+            }
+            if (cancelled) hideDownloadUi();
         }
     };
 

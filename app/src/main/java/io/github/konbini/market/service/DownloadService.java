@@ -6,10 +6,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import javax.net.ssl.SSLException;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -54,6 +59,16 @@ public class DownloadService extends Service {
         String statusText = "0%";
         String fileName = "";
         String filePath = "";
+        String errorMessage = "";
+    }
+
+    private static class HttpStatusException extends IOException {
+        final int statusCode;
+
+        HttpStatusException(int statusCode) {
+            super("HTTP " + statusCode);
+            this.statusCode = statusCode;
+        }
     }
 
     private static final Class<?>[] START_FOREGROUND_SIG = new Class[] {
@@ -182,6 +197,7 @@ public class DownloadService extends Service {
         p.putExtra("speed_bps", t.speed);
         p.putExtra("done", done);
         p.putExtra("error", error);
+        p.putExtra("error_message", t.errorMessage);
         p.putExtra("cancelled", cancelled);
         p.putExtra("active", !(done || error || cancelled));
         p.putExtra("installing", t.installing);
@@ -381,7 +397,7 @@ public class DownloadService extends Service {
                     continue;
                 }
                 if (responseCode < 200 || responseCode >= 300) {
-                    throw new IOException("Download failed with HTTP status " + responseCode);
+                    throw new HttpStatusException(responseCode);
                 }
                 break;
             }
@@ -468,6 +484,7 @@ public class DownloadService extends Service {
                 Log.i(TAG, "Download cancelled for app " + t.appId, e);
             } else {
                 Log.e(TAG, "Download failed for app " + t.appId, e);
+                t.errorMessage = getDownloadErrorMessage(e);
             }
             TASKS.remove(t.appId);
             persistTasks();
@@ -483,6 +500,24 @@ public class DownloadService extends Service {
             try { compatStopForeground(1000 + t.appId); } catch (Exception e) { }
             stopSelf();
         }
+    }
+
+    private String getDownloadErrorMessage(Throwable error) {
+        for (Throwable cause = error; cause != null; cause = cause.getCause()) {
+            if (cause instanceof HttpStatusException) {
+                int statusCode = ((HttpStatusException) cause).statusCode;
+                String statusClass = statusCode >= 400 && statusCode < 500 ? "4xx"
+                        : statusCode >= 500 && statusCode < 600 ? "5xx" : "HTTP";
+                return "HTTP error " + statusCode + " (" + statusClass + ")";
+            }
+            if (cause instanceof SSLException) return "SSL failure";
+            if (cause instanceof UnknownHostException) return "DNS error: host not found";
+            if (cause instanceof SocketTimeoutException) return "Connection timeout";
+            if (cause instanceof ConnectException) return "Connection error: " + cause.getMessage();
+        }
+
+        String message = error.getMessage();
+        return message == null || message.length() == 0 ? "Unknown download error" : message;
     }
 
     private void logDownloadIfAllowed(final TaskInfo task, final String appPackage) {

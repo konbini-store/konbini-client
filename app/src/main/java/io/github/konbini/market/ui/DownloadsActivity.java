@@ -63,6 +63,12 @@ public class DownloadsActivity extends Activity {
             boolean done = intent.getBooleanExtra("done", false);
             boolean error = intent.getBooleanExtra("error", false);
             boolean cancelled = intent.getBooleanExtra("cancelled", false);
+            if (error) {
+                String message = intent.getStringExtra("error_message");
+                Toast.makeText(DownloadsActivity.this,
+                        "Download failed: " + (message == null ? "Unknown error" : message),
+                        Toast.LENGTH_LONG).show();
+            }
             if (done || error || cancelled) loadInstalledMarketApps();
         }
     };
