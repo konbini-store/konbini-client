@@ -21,7 +21,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -289,7 +288,7 @@ public class MainActivity extends Activity {
         new AsyncTask<Void, Void, ArrayList<AppShort>>() {
             ArrayList<AppShort> promoSource = new ArrayList<>();
             protected ArrayList<AppShort> doInBackground(Void... v) {
-                ArrayList<AppShort> out = new ArrayList<AppShort>();
+//                ArrayList<AppShort> out = new ArrayList<AppShort>();
 //                loadEndpoint("/api/top-apps", false, deviceApi, out);
 //                loadEndpoint("/api/top-games", true, deviceApi, out);
 //                final ArrayList<String> banners = loadBanner();
@@ -303,7 +302,7 @@ public class MainActivity extends Activity {
 //                    });
 //                }
 
-                ArrayList<AppShort> apps = MainActivity.this.api.getTopApps();
+                ArrayList<AppShort> apps = MainActivity.this.api.getFeaturedApps();
                 if (apps != null)
                     Log.i("MainActivity", "App size::: "+String.valueOf(apps.size()));
 

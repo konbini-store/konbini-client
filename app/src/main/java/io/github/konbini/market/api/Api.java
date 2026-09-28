@@ -1,29 +1,17 @@
 package io.github.konbini.market.api;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.Build;
 import android.util.Log;
-import android.widget.ArrayAdapter;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.loopj.android.http.*;
-import org.apache.http.Header;
 
-import io.github.konbini.market.net.Http;
 import io.github.konbini.market.ui.ServerMetadata;
 import io.github.konbini.market.util.Prefs;
 
-import org.apache.http.client.HttpClient;
-
-import java.lang.reflect.Array;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -39,6 +27,8 @@ public class Api {
     private Context context;
     private ArrayList<AppShort> memoryApps;
     private long memoryAppsAt;
+    private ArrayList<AppShort> memoryFeaturedApps;
+    private long memoryFeaturedAppsAt;
 
     private int sdk = Build.VERSION.SDK_INT;
     private String supportedAbis = "";
@@ -129,8 +119,51 @@ public class Api {
 
     public String getSupportedAbis() { return this.supportedAbis; }
 
-    // Get top apps
-    public ArrayList<AppShort> getTopApps() {
+    // Get featured apps
+    public ArrayList<AppShort> getFeaturedApps() {
+        final String url = base_url + "/api/featured.json";
+        final ArrayList<AppShort> apps = new ArrayList<>();
+        final boolean[] success = {false};
+        if (memoryFeaturedApps != null && System.currentTimeMillis() - memoryFeaturedAppsAt <= CACHE_TTL_MS) {
+            return new ArrayList<>(memoryFeaturedApps);
+        }
+
+        String cached = Prefs.readCache(context, url);
+        if (cached != null && parseApps(cached, apps)) {
+            rememberFeaturedApps(apps);
+            Log.d("getFeaturedApps@Api", "Using cached response");
+            return apps;
+        }
+
+        Log.d("getFeaturedApps@Api", "No cache found.");
+
+        client.get(url, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
+                Log.i("Api", String.format(Locale.ENGLISH, "Got %d status code, yay!", statusCode));
+                String result;
+                JSONArray array;
+                try {
+                    result = new String(responseBody, "UTF-8");
+                    Log.d("Api", "onSuccess: "+result);
+                    Prefs.writeCache(context, url, result);
+                    success[0] = parseApps(result, apps);
+                    if (success[0]) rememberFeaturedApps(apps);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
+                Log.e("Api", String.format(Locale.ENGLISH, "Got %d status code... :(", statusCode));
+            }
+        });
+
+        return success[0] ? apps : null;
+    }
+
+    public ArrayList<AppShort> getAllApps() {
         final String url = base_url + "/api/apps.json";
         final ArrayList<AppShort> apps = new ArrayList<>();
         final boolean[] success = {false};
@@ -141,11 +174,11 @@ public class Api {
         String cached = Prefs.readCache(context, url);
         if (cached != null && parseApps(cached, apps)) {
             rememberApps(apps);
-            Log.d("getTopApps@Api", "Using cached response");
+            Log.d("getAllApps@Api", "Using cached response");
             return apps;
         }
 
-        Log.d("getTopApps@Api", "No cache found.");
+        Log.d("getAllApps@Api", "No cache found.");
 
         client.get(url, new AsyncHttpResponseHandler() {
                 @Override
@@ -174,7 +207,7 @@ public class Api {
     }
 
     public ArrayList<AppShort> searchApps(String query) {
-        ArrayList<AppShort> source = getTopApps();
+        ArrayList<AppShort> source = getAllApps();
         if (source == null) return null;
 
         String normalizedQuery = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
@@ -192,6 +225,11 @@ public class Api {
     private void rememberApps(ArrayList<AppShort> apps) {
         memoryApps = new ArrayList<>(apps);
         memoryAppsAt = System.currentTimeMillis();
+    }
+
+    private void rememberFeaturedApps(ArrayList<AppShort> apps) {
+        memoryFeaturedApps = new ArrayList<>(apps);
+        memoryFeaturedAppsAt = System.currentTimeMillis();
     }
 
     private boolean parseApps(String result, ArrayList<AppShort> apps) {
@@ -246,17 +284,17 @@ public class Api {
     }
 
     public ArrayList<AppShort> getAuthorApps(String author) {
-        if (author == null || author.length() == 0) return this.getTopApps();
-        ArrayList<AppShort> apps = filterApps(getTopApps(), author, true);
+        if (author == null || author.length() == 0) return this.getAllApps();
+        ArrayList<AppShort> apps = filterApps(getAllApps(), author, true);
         return apps;
     }
 
     public ArrayList<AppShort> getCategoryApps(String category) {
         if (category == null || category.length() == 0) {
             Log.e("getCategoryApps@Api", "Category is null or empty, returning all apps");
-            return this.getTopApps();
+            return this.getAllApps();
         }
-        return filterApps(getTopApps(), category, false);
+        return filterApps(getAllApps(), category, false);
     }
 
     private ArrayList<AppShort> filterApps(ArrayList<AppShort> source, String value, boolean byAuthor) {

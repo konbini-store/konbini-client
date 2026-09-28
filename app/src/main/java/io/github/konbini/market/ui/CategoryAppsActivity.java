@@ -6,15 +6,10 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Random;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import io.github.konbini.market.R;
 import io.github.konbini.market.api.AppShort;
-import io.github.konbini.market.model.AppItem;
 //import io.github.konbini.market.net.Api;
 import io.github.konbini.market.api.Api;
-import io.github.konbini.market.net.Http;
 import io.github.konbini.market.util.ImageLoader;
 import io.github.konbini.market.util.LocaleHelper;
 
@@ -22,7 +17,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -157,7 +151,7 @@ public class CategoryAppsActivity extends Activity {
                             if (appIds == null) {
                                 apps = api.getCategoryApps(query);
                             } else {
-                                ArrayList<AppShort> source = api.getTopApps();
+                                ArrayList<AppShort> source = api.getAllApps();
                                 if (source == null) return null;
                                 HashSet<Integer> selectedIds = new HashSet<>(appIds);
                                 apps = new ArrayList<>();

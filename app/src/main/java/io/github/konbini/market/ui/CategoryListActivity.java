@@ -9,11 +9,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import io.github.konbini.market.R;
-import io.github.konbini.market.api.App;
 import io.github.konbini.market.api.AppShort;
 import io.github.konbini.market.model.AppItem;
 import io.github.konbini.market.net.Api;
-import io.github.konbini.market.net.Http;
 import io.github.konbini.market.util.ImageLoader;
 import io.github.konbini.market.util.LocaleHelper;
 
@@ -190,7 +188,7 @@ public class CategoryListActivity extends Activity {
                     if (isCancelled()) return false;
                     io.github.konbini.market.api.Api api = io.github.konbini.market.api.Api.getInstance(CategoryListActivity.this);
                     JSONArray arr = api.getCategories(isGame);
-                    ArrayList<AppShort> apps = api.getTopApps();
+                    ArrayList<AppShort> apps = api.getAllApps();
 
                     outCats.add(new CategoryItem("", getString(isGame ? R.string.all_games : R.string.all_apps)));
                     HashSet<String> categoryCodes = new HashSet<>();
