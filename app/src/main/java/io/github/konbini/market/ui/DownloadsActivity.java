@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -218,8 +219,8 @@ public class DownloadsActivity extends Activity {
                     }
 
                     ArrayList<AppItem> all = new ArrayList<AppItem>();
-                    loadEndpoint("/api/apps?is_game=0", Build.VERSION.SDK_INT, installed, all);
-                    loadEndpoint("/api/apps?is_game=1", Build.VERSION.SDK_INT, installed, all);
+                    loadEndpoint("/api/apps?is_game=0", installed, all);
+                    loadEndpoint("/api/apps?is_game=1", installed, all);
 
                     ArrayList<AppItem> updates = new ArrayList<AppItem>();
                     ArrayList<AppItem> installedOnly = new ArrayList<AppItem>();
@@ -278,7 +279,7 @@ public class DownloadsActivity extends Activity {
         }.execute();
     }
 
-    private void loadEndpoint(String endpoint, int deviceApi, java.util.Map<String, Integer> installed, ArrayList<AppItem> out) {
+    private void loadEndpoint(String endpoint, Map<String, Integer> installed, ArrayList<AppItem> out) {
         try {
             String s = Http.getString(Api.baseUrl(this) + endpoint);
             if (s == null) return;
@@ -299,9 +300,9 @@ public class DownloadsActivity extends Activity {
                 a.downloads = o.optInt("downloads", 0);
                 a.versionCode = o.optInt("versionCode", o.optInt("version_code", 0));
                 Integer iv = installed.get(a.packageName);
-                a.installedVersionCode = iv == null ? 0 : iv.intValue();
+                a.installedVersionCode = iv == null ? 0 : iv;
                 a.description = o.optString("description", "");
-                if (a.api <= deviceApi && a.packageName != null && installed.containsKey(a.packageName)) out.add(a);
+                if (a.api <= Build.VERSION.SDK_INT && a.packageName != null && installed.containsKey(a.packageName)) out.add(a);
             }
         } catch (Exception e) { }
     }
