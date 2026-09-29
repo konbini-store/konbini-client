@@ -1,6 +1,7 @@
 package io.github.konbini.market.ui;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.logging.Level;
@@ -14,6 +15,7 @@ import io.github.konbini.market.api.*;
 import io.github.konbini.market.R;
 import io.github.konbini.market.net.Http;
 import io.github.konbini.market.service.DownloadService;
+import io.github.konbini.market.tasks.LoadScreenshotsAsyncTask;
 import io.github.konbini.market.util.AndroidVersions;
 import io.github.konbini.market.util.ImageLoader;
 import io.github.konbini.market.util.LocaleHelper;
@@ -59,12 +61,20 @@ public class AppDetailActivity extends Activity {
     private ImageView imgIcon;
     private TextView txtName, txtAuthor, txtMeta, txtDesc, txtToggle;
     private ImageView imgAndroidHeaderLogo;
-    private TextView txtDownloadsInfo, txtReviewsInfo, txtHeaderRating, txtreviewinfo;
-    private RatingBar ratingHeader, ratingAddReview;
+    private TextView txtDownloadsInfo;
+    TextView txtReviewsInfo;
+    private TextView txtHeaderRating;
+    TextView txtreviewinfo;
+    private RatingBar ratingHeader;
+    RatingBar ratingAddReview;
     private Button btnInstall, btnOpen, btnUninstall, btnCancelDownload;
-    private TextView txtScreensTitle, txtReviewsTitle, txtDownloadProgress;
-    private HorizontalScrollView screensScroll;
-    private LinearLayout screensContainer, downloadPanel, installButtons;
+    public TextView txtScreensTitle;
+    TextView txtReviewsTitle;
+    private TextView txtDownloadProgress;
+    public HorizontalScrollView screensScroll;
+    public LinearLayout screensContainer;
+    private LinearLayout downloadPanel;
+    private LinearLayout installButtons;
     private ProgressBar progressDownload;
 
     private LinearLayout detailsContainer, reviewsTabContainer;
@@ -72,25 +82,128 @@ public class AppDetailActivity extends Activity {
     private ListView list;
     private ListView listVersions;
     private Button btnTabDetails, btnTabVersions, btnTabReviews;
-    private ArrayList<ReviewItem> reviews = new ArrayList<ReviewItem>();
-    private ReviewAdapter adapter;
+    ArrayList<ReviewItem> reviews = new ArrayList<ReviewItem>();
+    ReviewAdapter adapter;
     private int activeTab = 0;
 
     private String pkgName = "";
     private String selectedVersion = "";
     private int currentMinApi = 1;
-    private boolean hasOwnReview = false;
+    boolean hasOwnReview = false;
     private String currentIconFile = "";
 
     private View loadingOverlay;
     private TextView txtLoading;
 
-    private App app;
+    public App app;
     private Boolean appInitialized = false;
 
     private boolean descCollapsed = true;
 
     private Api api;
+
+    private static class LoadDetailsAsyncTask extends AsyncTask<Void, Void, App> {
+        private final WeakReference<AppDetailActivity> context;
+
+        private LoadDetailsAsyncTask(WeakReference<AppDetailActivity> context) {
+            this.context = context;
+        }
+
+        @Override
+        protected App doInBackground(Void... v) {
+            AppDetailActivity activity = context.get();
+            Api api = activity.api;
+            Logger logger = Logger.getLogger(activity.getPackageName());
+            try {
+                return api.getApp(activity, activity.appId);
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, e.getMessage());
+                activity.appInitialized = true;
+                return null;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(App o) {
+            AppDetailActivity activity = context.get();
+            activity.showLoading(false, null);
+            if (o == null) {
+                activity.msg(activity.getString(R.string.error_network));
+                return;
+            }
+
+            activity.app = o;
+            String name = o.name;
+            final String dev = o.author;
+            final String desc = o.description == null ? "" : o.description;
+            final String shortDesc = desc.length() > 100 ? desc.substring(0, 100) + "..." : desc;
+            String icon = o.icon;
+            activity.currentIconFile = icon;
+
+            int downloads = 0;
+            int reviewCount = 0;
+            float avgRating = 0;
+            activity.pkgName = o.packageId;
+
+            activity.txtName.setText(name);
+            activity.txtAuthor.setText(dev);
+            AppVersion firstVersion = activity.app.getFirstVersion();
+            AppVersion lastVersion = activity.app.getLastVersion();
+            String compatibility = "";
+            if (firstVersion != null) {
+                String range = firstVersion.versionName;
+                if (lastVersion != null && lastVersion.versionName != null && !lastVersion.versionName.equals(firstVersion.versionName)) {
+                    range = firstVersion.versionName + " – " + lastVersion.versionName;
+                }
+                compatibility += activity.getString(R.string.version) + " " + range;
+            }
+            if (firstVersion != null) {
+                compatibility += " • Android " + AndroidVersions.apiToAndroid(firstVersion.minSdk) + " (API " + firstVersion.minSdk + ")";
+            }
+            compatibility += activity.app.isSupported() ? " • Compatible" : " • Not compatible";
+            activity.txtMeta.setText(compatibility);
+            activity.txtMeta.setVisibility(View.VISIBLE);
+
+            activity.txtAuthor.setOnClickListener(v -> {
+                Intent intent = new Intent(activity, CategoryAppsActivity.class);
+                intent.putExtra("type", "author");
+                intent.putExtra("query", dev);
+                intent.putExtra("title", "by "+dev);
+                activity.startActivity(intent);
+            });
+            if (desc.length() > 100) {
+                activity.txtDesc.setText(shortDesc);
+                activity.txtToggle.setVisibility(View.VISIBLE);
+                activity.txtToggle.setOnClickListener(v -> {
+                    activity.descCollapsed = !activity.descCollapsed;
+                    activity.txtToggle.setText(activity.descCollapsed ? R.string.expand_desc : R.string.collapse_desc);
+                    activity.txtDesc.setText(activity.descCollapsed ? shortDesc : desc);
+                });
+            } else {
+                activity.txtDesc.setText(desc);
+            }
+            activity.txtDownloadsInfo.setText(downloads + " " + activity.getString(R.string.downloads_count));
+            activity.txtReviewsInfo.setText(reviewCount + " " + activity.getString(R.string.reviews_count));
+            activity.txtHeaderRating.setText(String.format(Locale.US, "%.1f", avgRating));
+            activity.ratingHeader.setRating(avgRating);
+            activity.txtReviewsTitle.setText(activity.getString(R.string.reviews) + " (" + reviewCount + ")");
+
+            if (icon != null && icon.length() > 0) {
+                ImageLoader.load(activity, icon, activity.imgIcon, R.drawable.icon_placeholder);
+            } else {
+                activity.imgIcon.setImageResource(R.drawable.icon_placeholder);
+            }
+
+            activity.refreshInstalledButtons(activity.app);
+            activity.restoreDownloadState();
+            activity.bindVersionsTab();
+
+            activity.loadScreenshots();
+            activity.loadReviews();
+        }
+    }
+
+
 
     private final BroadcastReceiver dlReceiver = new BroadcastReceiver() {
         @Override
@@ -329,7 +442,7 @@ public class AppDetailActivity extends Activity {
         installButtons.setVisibility(View.VISIBLE);
         progressDownload.setProgress(0);
         txtDownloadProgress.setText("0%");
-        Log.i("AppDetailActivity", "App is initialized: "+(this.appInitialized ? "true" : "false"));
+        Log.i("AppDetailActivity", "App is initialized: "+(this.appInitialized.toString()));
         refreshInstalledButtons(this.app);
     }
 
@@ -373,209 +486,18 @@ public class AppDetailActivity extends Activity {
     private void loadDetails() {
         try { int androidLogoRes = getResources().getIdentifier("market_android_logo", "drawable", getPackageName()); if (imgAndroidHeaderLogo != null && androidLogoRes != 0) imgAndroidHeaderLogo.setImageResource(androidLogoRes); } catch (Exception e) { }
         showLoading(true, getString(R.string.loading));
-        new AsyncTask<Void, Void, App>() {
-            @Override
-            protected App doInBackground(Void... v) {
-                Logger logger = Logger.getLogger(AppDetailActivity.this.getPackageName());
-                try {
-                    return api.getApp(appId);
-                } catch (Exception e) {
-                    logger.log(Level.SEVERE, e.getMessage());
-                    appInitialized = true;
-                    return null;
-                }
-            }
-
-            @Override
-            protected void onPostExecute(App o) {
-                showLoading(false, null);
-                if (o == null) {
-                    msg(getString(R.string.error_network));
-                    return;
-                }
-
-                AppDetailActivity.this.app = o;
-                String name = o.name;
-                final String dev = o.author;
-                final String desc = o.description == null ? "" : o.description;
-                final String shortDesc = desc.length() > 100 ? desc.substring(0, 100) + "..." : desc;
-                String icon = o.icon;
-                currentIconFile = icon;
-
-                AppVersion minver = app.getFirstVersion();
-                AppVersion maxver = app.getLastVersion();
-                int downloads = 0;
-                int reviewCount = 0;
-                float avgRating = 0;
-                pkgName = o.packageId;
-
-                txtName.setText(name);
-                txtAuthor.setText(dev);
-                AppVersion firstVersion = app.getFirstVersion();
-                AppVersion lastVersion = app.getLastVersion();
-                String compatibility = "";
-                if (firstVersion != null) {
-                    String range = firstVersion.versionName;
-                    if (lastVersion != null && lastVersion.versionName != null && !lastVersion.versionName.equals(firstVersion.versionName)) {
-                        range = firstVersion.versionName + " – " + lastVersion.versionName;
-                    }
-                    compatibility += getString(R.string.version) + " " + range;
-                }
-                if (firstVersion != null) {
-                    compatibility += " • Android " + AndroidVersions.apiToAndroid(firstVersion.minSdk) + " (API " + firstVersion.minSdk + ")";
-                }
-                compatibility += app.isSupported() ? " • Compatible" : " • Not compatible";
-                txtMeta.setText(compatibility);
-                txtMeta.setVisibility(View.VISIBLE);
-                //txtAuthor.setCompoundDrawables(null, null, AppDetailActivity.this.getResources().getDrawable(R.drawable.check), null);
-                txtAuthor.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Intent intent = new Intent(AppDetailActivity.this, CategoryAppsActivity.class);
-                        intent.putExtra("type", "author");
-                        intent.putExtra("query", dev);
-                        intent.putExtra("title", "by "+dev);
-                        startActivity(intent);
-                    }
-                });
-                if (desc.length() > 100) {
-                    txtDesc.setText(shortDesc);
-                    txtToggle.setVisibility(View.VISIBLE);
-                    txtToggle.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            descCollapsed = !descCollapsed;
-                            txtToggle.setText(descCollapsed ? R.string.expand_desc : R.string.collapse_desc);
-                            txtDesc.setText(descCollapsed ? shortDesc : desc);
-                        }
-                    });
-                } else {
-                    txtDesc.setText(desc);
-                }
-                txtDownloadsInfo.setText(downloads + " " + getString(R.string.downloads_count));
-                txtReviewsInfo.setText(reviewCount + " " + getString(R.string.reviews_count));
-                txtHeaderRating.setText(String.format(Locale.US, "%.1f", avgRating));
-                ratingHeader.setRating(avgRating);
-                txtReviewsTitle.setText(getString(R.string.reviews) + " (" + reviewCount + ")");
-
-                if (icon != null && icon.length() > 0) {
-                    ImageLoader.load(AppDetailActivity.this, icon, imgIcon, R.drawable.icon_placeholder);
-                } else {
-                    imgIcon.setImageResource(R.drawable.icon_placeholder);
-                }
-
-                refreshInstalledButtons(AppDetailActivity.this.app);
-                restoreDownloadState();
-                bindVersionsTab();
-
-                loadScreenshots();
-                loadReviews();
-            }
-        }.execute();
+        new LoadDetailsAsyncTask(new WeakReference<>(this)).execute();
     }
 
     private void loadScreenshots() {
-        new AsyncTask<Void, Void, ArrayList<String>>() {
-            @Override
-            protected ArrayList<String> doInBackground(Void... v) {
-                AppDetailActivity activity = AppDetailActivity.this;
-                if (activity.isFinishing()) {
-                    Log.e("AppDetailActivity", "activity is finishing!!");
-                    return null;
-                }
-
-                if (activity.app != null) {
-                    if (activity.app.screenshots != null) {
-                        return activity.app.screenshots;
-                    } else {
-                        Log.e("AppDetailActivity", "app.screenshots is null!!");
-                    }
-                } else {
-                    Log.e("AppDetailActivity", "app is null!!");
-                }
-
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(ArrayList<String> arr) {
-                if (arr == null || arr.size() == 0) {
-                    txtScreensTitle.setVisibility(GONE);
-                    screensScroll.setVisibility(GONE);
-                    return;
-                }
-                txtScreensTitle.setVisibility(View.VISIBLE);
-                screensScroll.setVisibility(View.VISIBLE);
-                screensContainer.removeAllViews();
-                for (int i = 0; i < arr.size(); i++) {
-                    String file = arr.get(i);
-                    if (file == null || file.length() == 0) continue;
-                    ImageView iv = new ImageView(AppDetailActivity.this);
-                    LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(240, 400);
-                    lp.rightMargin = 10;
-                    iv.setLayoutParams(lp);
-                    iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
-                    screensContainer.addView(iv);
-                    ImageLoader.load(AppDetailActivity.this, file, iv, R.drawable.banner_placeholder);
-                }
-            }
-        }.execute();
+        new LoadScreenshotsAsyncTask(this).execute();
     }
 
     private void loadReviews() {
-        new AsyncTask<Void, Void, Object>() {
-            @Override
-            protected Object doInBackground(Void... v) {
-                try {
-                    int viewerId = Prefs.getUserId(AppDetailActivity.this);
-                    // TODO
-                    String s = null;
-                    if (s == null) return "null response";
-                    JSONArray arr = new JSONArray(s);
-                    ArrayList<ReviewItem> out = new ArrayList<ReviewItem>();
-                    for (int i = 0; i < arr.length(); i++) {
-                        out.add(parseReview(arr.getJSONObject(i)));
-                    }
-                    return out;
-                } catch (Exception e) {
-                    return e.toString();
-                }
-            }
-
-            @SuppressWarnings("unchecked")
-            @Override
-            protected void onPostExecute(Object out) {
-                if (out instanceof String) {
-                    txtReviewsTitle.setText(getString(R.string.reviews) + " (0)");
-                    txtReviewsInfo.setText("0 " + getString(R.string.reviews_count));
-                    hasOwnReview = false;
-                    ratingAddReview.setVisibility(View.VISIBLE);
-                    txtreviewinfo.setVisibility(View.VISIBLE);
-                    return;
-                }
-
-                ArrayList<ReviewItem> listOut = (ArrayList<ReviewItem>) out;
-                reviews.clear();
-                reviews.addAll(listOut);
-                hasOwnReview = false;
-                int myId = Prefs.getUserId(AppDetailActivity.this);
-                for (int i = 0; i < reviews.size(); i++) {
-                    if (reviews.get(i).userId == myId && myId > 0) {
-                        hasOwnReview = true;
-                        break;
-                    }
-                }
-
-                txtReviewsTitle.setText(getString(R.string.reviews) + " (" + reviews.size() + ")");
-                txtReviewsInfo.setText(reviews.size() + " " + getString(R.string.reviews_count));
-                ratingAddReview.setVisibility(hasOwnReview ? GONE : View.VISIBLE);
-                txtreviewinfo.setVisibility(hasOwnReview ? GONE : View.VISIBLE);
-                adapter.notifyDataSetChanged();
-            }
-        }.execute();
+        new LoadReviewsAsyncTask(this).execute();
     }
 
-    private ReviewItem parseReview(JSONObject r) {
+    ReviewItem parseReview(JSONObject r) {
         ReviewItem ri = new ReviewItem();
         ri.id = r.optInt("id", 0);
         ri.userId = r.optInt("user_id", 0);
@@ -1099,7 +1021,7 @@ public class AppDetailActivity extends Activity {
         dialog.show();
     }
 
-    private static class ReviewItem {
+    static class ReviewItem {
         int id;
         int userId;
         String username = "User";
@@ -1113,7 +1035,7 @@ public class AppDetailActivity extends Activity {
         int userReaction = 0;
     }
 
-    private class ReviewAdapter extends BaseAdapter {
+    class ReviewAdapter extends BaseAdapter {
         @Override
         public int getCount() { return reviews.size(); }
         @Override

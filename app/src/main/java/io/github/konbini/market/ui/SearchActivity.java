@@ -89,7 +89,8 @@ public class SearchActivity extends Activity {
 
         protected Object doInBackground(Void... v) {
             try {
-                ArrayList<AppShort> out = Api.getInstance(SearchActivity.this).searchApps(q);
+                ArrayList<AppShort> out = Api.getInstance(SearchActivity.this)
+                        .searchApps(SearchActivity.this, q);
                 return out == null ? "Unable to load app catalog" : out;
             } catch (Exception e) {
                 return "URL=" + url + "\n" + e.toString();

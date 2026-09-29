@@ -1,7 +1,9 @@
 package io.github.konbini.market.ui;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Random;
 
 import org.json.JSONArray;
@@ -288,49 +290,55 @@ public class MainActivity extends Activity {
     }
 
     private void loadTopContent() {
-        showLoading(true);
-        final int deviceApi = Build.VERSION.SDK_INT;
-        new AsyncTask<Void, Void, ArrayList<AppShort>>() {
-            ArrayList<AppShort> promoSource = new ArrayList<>();
-            protected ArrayList<AppShort> doInBackground(Void... v) {
-//                ArrayList<AppShort> out = new ArrayList<AppShort>();
-//                loadEndpoint("/api/top-apps", false, deviceApi, out);
-//                loadEndpoint("/api/top-games", true, deviceApi, out);
-//                final ArrayList<String> banners = loadBanner();
-//                if (!banners.isEmpty()) {
-//                    runOnUiThread(new Runnable() {
-//                        @Override
-//                        public void run() {
-//                            (new DownloadImageTask(bannerImage)).execute(
-//                              Api.baseUrl(MainActivity.this) + "/html/banners/" + banners.get(0));
-//                        }
-//                    });
-//                }
+        new LoadTopContentTask(this, api).execute();
+    }
 
-                ArrayList<AppShort> apps = MainActivity.this.api.getFeaturedApps();
-                if (apps != null)
-                    Log.i("MainActivity", "App size::: "+String.valueOf(apps.size()));
+    private static class LoadTopContentTask extends AsyncTask<Void, Void, ArrayList<AppShort>> {
+        private final WeakReference<MainActivity> activityRef;
+        private final Api api;
+        private final ArrayList<AppShort> promoSource = new ArrayList<>();
 
-                return (apps != null) ? apps : new ArrayList<AppShort>();
+        LoadTopContentTask(MainActivity activity, Api api) {
+            this.activityRef = new WeakReference<>(activity);
+            this.api = api;
+        }
+
+        protected void onPreExecute() {
+            MainActivity activity = activityRef.get();
+            if (activity != null) {
+                activity.showLoading(true);
             }
-            protected void onPostExecute(ArrayList<AppShort> out) {
-                showLoading(false);
-                if (out == null) {
-                    Toast.makeText(MainActivity.this, R.string.error_network, Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                items.clear();
-                items.addAll(out);
-                CACHE_ITEMS.clear();
-                CACHE_ITEMS.addAll(out);
-                CACHE_PROMO_SOURCE.clear();
-                CACHE_PROMO_SOURCE.addAll(promoSource);
-                CACHE_TIME = System.currentTimeMillis();
-                adapter.refreshInstalledPackages();
-                adapter.notifyDataSetChanged();
-                bindPromo(promoSource);
+        }
+
+        protected ArrayList<AppShort> doInBackground(Void... v) {
+            MainActivity activity = activityRef.get();
+            if (activity == null) return new ArrayList<>();
+            ArrayList<AppShort> apps = api.getFeaturedApps(activity);
+            if (apps != null)
+                Log.i("MainActivity", "App size::: "+String.valueOf(apps.size()));
+
+            return (apps != null) ? apps : new ArrayList<AppShort>();
+        }
+
+        protected void onPostExecute(ArrayList<AppShort> out) {
+            MainActivity activity = activityRef.get();
+            if (activity == null) return;
+            activity.showLoading(false);
+            if (out == null) {
+                Toast.makeText(activity, R.string.error_network, Toast.LENGTH_SHORT).show();
+                return;
             }
-        }.execute();
+            activity.items.clear();
+            activity.items.addAll(out);
+            CACHE_ITEMS.clear();
+            CACHE_ITEMS.addAll(out);
+            CACHE_PROMO_SOURCE.clear();
+            CACHE_PROMO_SOURCE.addAll(promoSource);
+            CACHE_TIME = System.currentTimeMillis();
+            activity.adapter.refreshInstalledPackages();
+            activity.adapter.notifyDataSetChanged();
+            activity.bindPromo(promoSource);
+        }
     }
 
     private ArrayList<String> loadBanner() {
@@ -459,52 +467,67 @@ public class MainActivity extends Activity {
     // TODO
     private void checkClientUpdateIfNeeded() {
         final boolean ru = isRu();
-        new AsyncTask<Void, Void, JSONObject>() {
-            protected JSONObject doInBackground(Void... params) {
-                try {
-                    String s = Http.getString(MainActivity.this.api.getBaseUrl(MainActivity.this) + "/api/client-latest.json");
-                    if (s == null || s.length() == 0) return null;
-                    return new JSONObject(s);
-                } catch (Exception e) { return null; }
+        new CheckClientUpdateTask(this, ru).execute();
+    }
+
+    private static class CheckClientUpdateTask extends AsyncTask<Void, Void, JSONObject> {
+        private final WeakReference<MainActivity> activityRef;
+        private final boolean ru;
+
+        CheckClientUpdateTask(MainActivity activity, boolean ru) {
+            this.activityRef = new WeakReference<>(activity);
+            this.ru = ru;
+        }
+
+        protected JSONObject doInBackground(Void... params) {
+            MainActivity activity = activityRef.get();
+            if (activity == null) return null;
+            try {
+                String s = Http.getString(activity.api.getBaseUrl(activity) + "/api/client-latest.json");
+                if (s == null || s.length() == 0) return null;
+                return new JSONObject(s);
+            } catch (Exception e) { return null; }
+        }
+
+        protected void onPostExecute(JSONObject o) {
+            final MainActivity activity = activityRef.get();
+            if (activity == null) return;
+            if (o == null) {
+                Log.e("clientUpdate", "Error checking for client update: Null response");
+                return;
             }
-            protected void onPostExecute(JSONObject o) {
-                if (o == null) {
-                    Log.e("clientUpdate", "Error checking for client update: Null response");
-                    return;
-                }
-                try {
-                    int latestCode = o.optInt("version_code", 0);
-                    String latestName = o.optString("version_name", "");
-                    String updateUrl = o.optString("update_url", "");
-                    String notes = ru ? o.optString("notes_ru", "") : o.optString("notes_en", "");
-                    PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
-                    if (latestCode > pi.versionCode && updateUrl != null && updateUrl.length() > 0) {
-                        StringBuilder msg = new StringBuilder(getString(R.string.client_update_message));
-                        if (latestName != null && latestName.length() > 0) {
-                            msg.append("\n\n").append(getString(R.string.version)).append(" ").append(latestName);
-                        }
-                        if (notes != null && notes.length() > 0) {
-                            msg.append("\n\n").append(getString(R.string.client_update_note_prefix)).append(" ").append(notes);
-                        }
-                        final String finalUrl = updateUrl;
-                        new AlertDialog.Builder(MainActivity.this)
-                                .setTitle(getString(R.string.client_update_title))
-                                .setMessage(msg.toString())
-                                .setPositiveButton(getString(R.string.update_now), new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        try {
-                                            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(finalUrl)));
-                                        } catch (Exception e) { }
-                                    }
-                                })
-                                .setNegativeButton(getString(R.string.later), null)
-                                .show();
+            try {
+                int latestCode = o.optInt("version_code", 0);
+                String latestName = o.optString("version_name", "");
+                String updateUrl = o.optString("update_url", "");
+                String notes = ru ? o.optString("notes_ru", "") : o.optString("notes_en", "");
+                PackageInfo pi = activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0);
+                if (latestCode > pi.versionCode && updateUrl != null && updateUrl.length() > 0) {
+                    StringBuilder msg = new StringBuilder(activity.getString(R.string.client_update_message));
+                    if (latestName != null && latestName.length() > 0) {
+                        msg.append("\n\n").append(activity.getString(R.string.version)).append(" ").append(latestName);
                     }
-                } catch (Exception e) {
-                    Log.e("clientUpdate", "Error checking for client update: " + e.getMessage());
+                    if (notes != null && notes.length() > 0) {
+                        msg.append("\n\n").append(activity.getString(R.string.client_update_note_prefix)).append(" ").append(notes);
+                    }
+                    final String finalUrl = updateUrl;
+                    new AlertDialog.Builder(activity)
+                            .setTitle(activity.getString(R.string.client_update_title))
+                            .setMessage(msg.toString())
+                            .setPositiveButton(activity.getString(R.string.update_now), new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    try {
+                                        activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(finalUrl)));
+                                    } catch (Exception e) { }
+                                }
+                            })
+                            .setNegativeButton(activity.getString(R.string.later), null)
+                            .show();
                 }
+            } catch (Exception e) {
+                Log.e("clientUpdate", "Error checking for client update: " + e.getMessage());
             }
-        }.execute();
+        }
     }
 
     private void getConsentFromUserThenSendAnalytics() {
@@ -548,25 +571,35 @@ public class MainActivity extends Activity {
         long now = System.currentTimeMillis();
         if (now - Prefs.getLastAnalyticsSentAt(this) < 12L * 60L * 60L * 1000L) return;
         Prefs.setLastAnalyticsSentAt(this, now);
-        new AsyncTask<Void, Void, Void>() {
-            protected Void doInBackground(Void... params) {
-                try {
-                    PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
-                    JSONObject o = new JSONObject();
-                    o.put("api_level", Build.VERSION.SDK_INT);
-                    o.put("app_version_code", pi.versionCode);
-                    o.put("app_version_name", pi.versionName == null ? "<no version name>" : pi.versionName);
-                    o.put("device_model", Build.MODEL == null ? "<no model>" : Build.MODEL);
-                    o.put("manufacturer", Build.MANUFACTURER == null ? "<no manufacturer>" : Build.MANUFACTURER);
-                    o.put("lang", java.util.Locale.getDefault().getLanguage());
-                    Log.d("sendAnalytics@Main", "About to send to "+Prefs.getSocialServer(MainActivity.this) + "/api/putStats"+"...");
-                    Log.d("sendAnalytics@Main", "Response: "+Http.postJson(Prefs.getSocialServer(MainActivity.this) + "/api/putStats", o.toString()));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return null;
+        new SendAnalyticsTask(this).execute();
+    }
+
+    private static class SendAnalyticsTask extends AsyncTask<Void, Void, Void> {
+        private final WeakReference<MainActivity> activityRef;
+
+        SendAnalyticsTask(MainActivity activity) {
+            this.activityRef = new WeakReference<>(activity);
+        }
+
+        protected Void doInBackground(Void... params) {
+            MainActivity activity = activityRef.get();
+            if (activity == null) return null;
+            try {
+                PackageInfo pi = activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0);
+                JSONObject o = new JSONObject();
+                o.put("api_level", Build.VERSION.SDK_INT);
+                o.put("app_version_code", pi.versionCode);
+                o.put("app_version_name", pi.versionName == null ? "<no version name>" : pi.versionName);
+                o.put("device_model", Build.MODEL == null ? "<no model>" : Build.MODEL);
+                o.put("manufacturer", Build.MANUFACTURER == null ? "<no manufacturer>" : Build.MANUFACTURER);
+                o.put("lang", Locale.getDefault().getLanguage());
+                Log.d("sendAnalytics@Main", "About to send to "+Prefs.getSocialServer(activity) + "/api/putStats"+"...");
+                Log.d("sendAnalytics@Main", "Response: "+Http.postJson(Prefs.getSocialServer(activity) + "/api/putStats", o.toString()));
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        }.execute();
+            return null;
+        }
     }
 
     private void showApi25WarningIfNeeded() {

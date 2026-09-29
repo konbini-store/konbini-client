@@ -12,6 +12,7 @@ import io.github.konbini.market.R;
 import io.github.konbini.market.api.AppShort;
 import io.github.konbini.market.model.AppItem;
 import io.github.konbini.market.net.Api;
+import io.github.konbini.market.ui.tasks.LoadDataAsyncTask;
 import io.github.konbini.market.util.ImageLoader;
 import io.github.konbini.market.util.LocaleHelper;
 
@@ -34,7 +35,7 @@ import android.widget.Toast;
 
 public class CategoryListActivity extends Activity {
 
-    private static class CategoryItem {
+    public static class CategoryItem {
         public final String code;
         public final String label;
         public String preview = "";
@@ -45,10 +46,10 @@ public class CategoryListActivity extends Activity {
     private ListView list;
     private TextView titleView;
     private View loadingOverlay;
-    private ArrayList<CategoryItem> items = new ArrayList<CategoryItem>();
-    private ArrayList<AppItem> allApps = new ArrayList<AppItem>();
-    private ArrayAdapter<CategoryItem> adapter;
-    private boolean isGame;
+    public ArrayList<CategoryItem> items = new ArrayList<CategoryItem>();
+    public ArrayList<AppItem> allApps = new ArrayList<AppItem>();
+    public ArrayAdapter<CategoryItem> adapter;
+    public boolean isGame;
     private View promoHeader;
     private View promoRoot;
     private ImageView promoIcon;
@@ -178,103 +179,7 @@ public class CategoryListActivity extends Activity {
 
     private void loadData() {
         showLoading(true);
-        loadTask = new AsyncTask<Void, Void, Boolean>() {
-            ArrayList<CategoryItem> outCats = new ArrayList<CategoryItem>();
-            ArrayList<AppItem> outApps = new ArrayList<AppItem>();
-
-            @Override
-            protected Boolean doInBackground(Void... params) {
-                try {
-                    if (isCancelled()) return false;
-                    io.github.konbini.market.api.Api api = io.github.konbini.market.api.Api.getInstance(CategoryListActivity.this);
-                    JSONArray arr = api.getCategories(isGame);
-                    ArrayList<AppShort> apps = api.getAllApps();
-
-                    outCats.add(new CategoryItem("", getString(isGame ? R.string.all_games : R.string.all_apps)));
-                    HashSet<String> categoryCodes = new HashSet<>();
-                    for (int i = 0; i < arr.length(); i++) {
-                        if (isCancelled()) return false;
-                        JSONObject o = arr.getJSONObject(i);
-                        String code = o.optString("cat_id", o.optString("id", ""));
-                        outCats.add(new CategoryItem(code, o.optString("name", "")));
-                        if (code.length() > 0) categoryCodes.add(code);
-                    }
-
-                    int deviceApi = Build.VERSION.SDK_INT;
-                    for (int i = 0; i < apps.size(); i++) {
-                        if (isCancelled()) return false;
-                        AppShort o = apps.get(i);
-                        String categoryCode = o.categoryCode == null ? "other_apps" : o.categoryCode;
-                        if (!categoryCodes.contains(categoryCode)) continue;
-
-                        AppItem a = new AppItem();
-                        a.id = o.id;
-                        a.name = o.name;
-                        a.developer = o.author;
-                        a.icon = o.icon;
-                        a.api = o.api;
-                        a.packageName = o.packageName;
-                        a.isGame = isGame;
-                        a.categoryCode = categoryCode;
-                        a.categoryLabel = o.categoryLabel;
-                        a.rating = (float) o.rating;
-                        a.downloads = o.downloads;
-                        a.description = o.description;
-                        if (a.api <= deviceApi) outApps.add(a);
-                    }
-
-                    HashMap<String, ArrayList<String>> previews = new HashMap<>();
-                    for (int i = 0; i < outApps.size(); i++) {
-                        if (isCancelled()) return false;
-                        AppItem a = outApps.get(i);
-                        String key = a.categoryCode == null ? "" : a.categoryCode;
-                        ArrayList<String> names = previews.get(key);
-                        if (names == null) { names = new ArrayList<>(); previews.put(key, names); }
-                        if (names.size() < 3) names.add(a.name);
-                    }
-                    ArrayList<String> allNames = new ArrayList<>();
-                    for (int i = 0; i < outApps.size() && allNames.size() < 3; i++) allNames.add(outApps.get(i).name);
-
-                    for (int i = 0; i < outCats.size(); i++) {
-                        if (isCancelled()) return false;
-                        CategoryItem c = outCats.get(i);
-                        ArrayList<String> names = c.code.length() == 0 ? allNames : previews.get(c.code);
-                        if (names != null && names.size() > 0) {
-                            StringBuilder sb = new StringBuilder();
-                            for (int j = 0; j < names.size(); j++) {
-                                if (j > 0) sb.append(", ");
-                                sb.append(names.get(j));
-                            }
-                            c.preview = sb.toString();
-                        } else {
-                            c.preview = "";
-                        }
-                    }
-                    return true;
-                } catch (Exception e) {
-                    return false;
-                }
-            }
-
-            @Override
-            protected void onPostExecute(Boolean ok) {
-                if (isCancelled()) return;
-                if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
-                    return;
-                }
-                showLoading(false);
-                if (!ok) {
-                    Toast.makeText(CategoryListActivity.this, R.string.error_network, Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                items.clear();
-                items.addAll(outCats);
-                allApps.clear();
-                allApps.addAll(outApps);
-                adapter.notifyDataSetChanged();
-                bindPromotion();
-            }
-        };
+        loadTask = new LoadDataAsyncTask(this);
         loadTask.execute();
     }
 
@@ -287,7 +192,7 @@ public class CategoryListActivity extends Activity {
         super.onDestroy();
     }
 
-    private void bindPromotion() {
+    public void bindPromotion() {
         if (promoRoot == null || promoIcon == null || promoText == null) return;
         if (allApps.isEmpty()) {
             promoRoot.setVisibility(View.GONE);
@@ -303,7 +208,7 @@ public class CategoryListActivity extends Activity {
         promoAppName.setText(promoApp.name);
     }
 
-    private void showLoading(boolean show) {
+    public void showLoading(boolean show) {
         if (loadingOverlay != null) loadingOverlay.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 }

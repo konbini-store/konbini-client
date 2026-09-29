@@ -30,11 +30,10 @@ import android.widget.Toast;
 
 public class CategoryAppsActivity extends Activity {
     private ListView list;
-    private TextView titleView, subtitleView;
     private View loadingOverlay;
     private AppListAdapter adapter;
-    private ArrayList<AppShort> items = new ArrayList<>();
-    private ArrayList<AppShort> originalItems = new ArrayList<>();
+    private final ArrayList<AppShort> items = new ArrayList<>();
+    ArrayList<AppShort> originalItems = new ArrayList<>();
     private View promoRoot;
     private ImageView promoIcon;
     private TextView promoText;
@@ -54,12 +53,12 @@ public class CategoryAppsActivity extends Activity {
         final boolean isGame = getIntent().getBooleanExtra("is_game", false);
         final ArrayList<Integer> appIds = getIntent().getIntegerArrayListExtra("app_ids");
 
-        titleView = (TextView) findViewById(R.id.txtTitle);
-        subtitleView = (TextView) findViewById(R.id.txtSubtitle);
-        list = (ListView) findViewById(R.id.list);
+        TextView titleView = findViewById(R.id.txtTitle);
+        TextView subtitleView = findViewById(R.id.txtSubtitle);
+        list = findViewById(R.id.list);
         loadingOverlay = findViewById(R.id.loadingOverlay);
-        btnTopFree = (Button) findViewById(R.id.btnTopFree);
-        btnTopDownloads = (Button) findViewById(R.id.btnTopDownloads);
+        btnTopFree = findViewById(R.id.btnTopFree);
+        btnTopDownloads = findViewById(R.id.btnTopDownloads);
 
         if (list == null) {
             Toast.makeText(this, "list not found", Toast.LENGTH_LONG).show();
@@ -69,29 +68,27 @@ public class CategoryAppsActivity extends Activity {
 
         View promoHeader = LayoutInflater.from(this).inflate(R.layout.view_promotion_app, list, false);
         promoRoot = promoHeader.findViewById(R.id.promoRoot);
-        promoIcon = (ImageView) promoHeader.findViewById(R.id.promoIcon);
-        promoText = (TextView) promoHeader.findViewById(R.id.promoText);
-        appName = (TextView) promoHeader.findViewById(R.id.appName);
+        promoIcon = promoHeader.findViewById(R.id.promoIcon);
+        promoText = promoHeader.findViewById(R.id.promoText);
+        appName = promoHeader.findViewById(R.id.appName);
         list.addHeaderView(promoHeader, null, false);
 
         try {
-            ImageButton btnHome = (ImageButton) findViewById(R.id.btnHome);
+            ImageButton btnHome = findViewById(R.id.btnHome);
             if (btnHome != null) {
-                                btnHome.setOnClickListener(new View.OnClickListener() {
-                    public void onClick(View v) {
-                        Intent i = new Intent(CategoryAppsActivity.this, MainActivity.class);
-                        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        startActivity(i);
-                        finish();
-                    }
+                btnHome.setOnClickListener(v -> {
+                    Intent i = new Intent(CategoryAppsActivity.this, MainActivity.class);
+                    i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    startActivity(i);
+                    finish();
                 });
             }
-            ((ImageButton)findViewById(R.id.btnSearch)).setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) { startActivity(new Intent(CategoryAppsActivity.this, SearchActivity.class)); }
-            });
+            findViewById(R.id.btnSearch).setOnClickListener(v -> startActivity(new Intent(CategoryAppsActivity.this, SearchActivity.class)));
             Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/storopia.ttf");
             if (titleView != null) titleView.setTypeface(tf);
-        } catch (Exception e) { }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         if (titleView != null) titleView.setText(getString(isGame ? R.string.games1 : R.string.apps1));
         if (subtitleView != null) subtitleView.setText(title == null || title.length() == 0 ? getString(isGame ? R.string.all_games : R.string.all_apps) : title);
@@ -138,70 +135,27 @@ public class CategoryAppsActivity extends Activity {
 
     private void loadApps(final String type, final String query, final boolean isGame, final ArrayList<Integer> appIds) {
         showLoading(true);
-        final Api api = Api.getInstance(CategoryAppsActivity.this);
-        new AsyncTask<Void, Void, ArrayList<AppShort>>() {
-            protected ArrayList<AppShort> doInBackground(Void... v) {
-                try {
-                    ArrayList<AppShort> apps;
-                    switch (type) {
-                        case "author":
-                            apps = api.getAuthorApps(query);
-                            break;
-                        case "category":
-                            if (appIds == null) {
-                                apps = api.getCategoryApps(query);
-                            } else {
-                                ArrayList<AppShort> source = api.getAllApps();
-                                if (source == null) return null;
-                                HashSet<Integer> selectedIds = new HashSet<>(appIds);
-                                apps = new ArrayList<>();
-                                for (AppShort app : source) {
-                                    if (selectedIds.contains(app.id)) apps.add(app);
-                                }
-                            }
-                            break;
-                        default:
-                            return null;
-                    }
-                    return apps;
-                } catch (Exception e) { return null; }
-            }
-            protected void onPostExecute(ArrayList<AppShort> out) {
-                showLoading(false);
-                if (out == null) {
-                    Toast.makeText(CategoryAppsActivity.this, R.string.error_network, Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                originalItems.clear();
-                originalItems.addAll(out);
-                bindPromotion();
-                applySort();
-                updateTabButtons();
-            }
-        }.execute();
+        new LoadAppsAsyncTask(this, type, query,
+                isGame, appIds, Api.getInstance(CategoryAppsActivity.this)).execute();
     }
 
-    private void applySort() {
+    void applySort() {
         items.clear();
         items.addAll(originalItems);
         if (sortDownloads) {
-            Collections.sort(items, new Comparator<AppShort>() {
-                public int compare(AppShort a, AppShort b) { return b.downloads - a.downloads; }
-            });
+            Collections.sort(items, (a, b) -> b.downloads - a.downloads);
         } else {
-            Collections.sort(items, new Comparator<AppShort>() {
-                public int compare(AppShort a, AppShort b) {
-                    int r = Float.compare((float)b.rating, (float)a.rating);
-                    if (r != 0) return r;
-                    return a.name.compareToIgnoreCase(b.name);
-                }
+            Collections.sort(items, (a, b) -> {
+                int r = Float.compare((float)b.rating, (float)a.rating);
+                if (r != 0) return r;
+                return a.name.compareToIgnoreCase(b.name);
             });
         }
         adapter.refreshInstalledPackages();
         adapter.notifyDataSetChanged();
     }
 
-    private void bindPromotion() {
+    void bindPromotion() {
         if (promoRoot == null || promoIcon == null || promoText == null) return;
         if (originalItems.isEmpty()) {
             promoRoot.setVisibility(View.GONE);
@@ -217,7 +171,7 @@ public class CategoryAppsActivity extends Activity {
         appName.setText(promoApp.name);
     }
 
-    private void updateTabButtons() {
+    void updateTabButtons() {
         if (btnTopFree != null) {
             btnTopFree.setCompoundDrawablePadding(6);
             btnTopFree.setCompoundDrawablesWithIntrinsicBounds(sortDownloads ? R.drawable.btn_strip_mark_off : R.drawable.btn_strip_mark_on, 0, 0, 0);
@@ -228,7 +182,7 @@ public class CategoryAppsActivity extends Activity {
         }
     }
 
-    private void showLoading(boolean show) {
+    void showLoading(boolean show) {
         if (loadingOverlay != null) loadingOverlay.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 }
