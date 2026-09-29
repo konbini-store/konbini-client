@@ -20,28 +20,23 @@ import java.util.Locale;
  */
 
 public class Api {
-    private static String default_base_url = "http://konbini.lol";
-    private static final String CACHE_PREFS = "api_response_cache";
+    private static final String default_base_url = "http://konbini.lol";
     private static final long CACHE_TTL_MS = 5 * 60 * 1000L;
     private String base_url = default_base_url;
-    private Context context;
     private ArrayList<AppShort> memoryApps;
     private long memoryAppsAt;
     private ArrayList<AppShort> memoryFeaturedApps;
     private long memoryFeaturedAppsAt;
 
-    private int sdk = Build.VERSION.SDK_INT;
     private String supportedAbis = "";
-    private String platformQueries = "";
 
     private static Api instance;
 
-    private SyncHttpClient client = new SyncHttpClient();
+    private final SyncHttpClient client = new SyncHttpClient();
 
     private ServerMetadata serverMetadata;
-    private boolean cacheOutdated = false;
 
-    private Api(String base_url) {
+    private Api(Context context, String base_url) {
         if (base_url != null)
             this.base_url = base_url;
 
@@ -49,7 +44,8 @@ public class Api {
             this.base_url = "http://"+this.base_url;
         }
 
-        if (this.sdk >= Build.VERSION_CODES.LOLLIPOP) {
+        int sdk = Build.VERSION.SDK_INT;
+        if (sdk >= Build.VERSION_CODES.LOLLIPOP) {
             for (int i = 0; i < Build.SUPPORTED_ABIS.length; i++) {
                 supportedAbis += (Build.SUPPORTED_ABIS[i]) +
                         ((i < Build.SUPPORTED_ABIS.length - 1) ? "," : "");
@@ -63,10 +59,10 @@ public class Api {
         Log.d("Supported ABIs", supportedAbis);
 
         // platformQueries = String.format(Locale.ENGLISH, "api=%d&abis=%s", sdk, supportedAbis);
-        fetchServerMetadata();
+        fetchServerMetadata(context);
     }
 
-    private void fetchServerMetadata() {
+    private void fetchServerMetadata(Context context) {
         AsyncHttpClient client = new AsyncHttpClient();
         String url = String.format(Locale.ENGLISH, "%s/api/meta.json", this.base_url);
         Log.d("fetchServerMetadata@Api", "Metadata check");
@@ -84,7 +80,6 @@ public class Api {
 
                     long lastUpdated = Prefs.getServerLastUpdated(context);
                     if (lastUpdated != serverMetadata.getLastUpdated()) {
-                        cacheOutdated = true;
                         Log.d("fetchServerMetadata@Api", "fetchServerMetadata: outdated cache!");
                         Prefs.setServerLastUpdated(context, serverMetadata.getLastUpdated());
                         Prefs.clearCache(context);
@@ -102,17 +97,16 @@ public class Api {
         });
     }
 
-    static synchronized Api getInstance(String base_url) {
+    static synchronized Api getInstance(Context context, String base_url) {
         if (instance == null) {
-            instance = new Api(base_url);
+            instance = new Api(context, base_url);
         }
         return instance;
     }
 
     public static synchronized Api getInstance(Context context) {
         String url = Prefs.getServer(context);
-        Api api = getInstance(url.equals("") ? default_base_url : url);
-        api.context = context.getApplicationContext();
+        Api api = getInstance(context, url.equals("") ? default_base_url : url);
         return api;
     }
 
@@ -123,7 +117,7 @@ public class Api {
     public String getSupportedAbis() { return this.supportedAbis; }
 
     // Get featured apps
-    public ArrayList<AppShort> getFeaturedApps() {
+    public ArrayList<AppShort> getFeaturedApps(Context context) {
         final String url = base_url + "/api/featured.json";
         final ArrayList<AppShort> apps = new ArrayList<>();
         final boolean[] success = {false};
@@ -166,7 +160,7 @@ public class Api {
         return success[0] ? apps : null;
     }
 
-    public ArrayList<AppShort> getAllApps() {
+    public ArrayList<AppShort> getAllApps(Context context) {
         final String url = base_url + "/api/apps.json";
         final ArrayList<AppShort> apps = new ArrayList<>();
         final boolean[] success = {false};
@@ -209,8 +203,8 @@ public class Api {
         return success[0] ? apps : null;
     }
 
-    public ArrayList<AppShort> searchApps(String query) {
-        ArrayList<AppShort> source = getAllApps();
+    public ArrayList<AppShort> searchApps(Context context, String query) {
+        ArrayList<AppShort> source = getAllApps(context);
         if (source == null) return null;
 
         String normalizedQuery = query == null ? "" : query.trim().toLowerCase(Locale.US);
@@ -248,7 +242,7 @@ public class Api {
         }
     }
 
-    public JSONArray getCategories(boolean isGame) {
+    public JSONArray getCategories(Context context, boolean isGame) {
         final String url = base_url + (isGame
                 ? "/api/categories/games.json"
                 : "/api/categories/apps.json");
@@ -286,18 +280,17 @@ public class Api {
         return categories[0];
     }
 
-    public ArrayList<AppShort> getAuthorApps(String author) {
-        if (author == null || author.length() == 0) return this.getAllApps();
-        ArrayList<AppShort> apps = filterApps(getAllApps(), author, true);
-        return apps;
+    public ArrayList<AppShort> getAuthorApps(Context context, String author) {
+        if (author == null || author.length() == 0) return this.getAllApps(context);
+        return filterApps(getAllApps(context), author, true);
     }
 
-    public ArrayList<AppShort> getCategoryApps(String category) {
+    public ArrayList<AppShort> getCategoryApps(Context context, String category) {
         if (category == null || category.length() == 0) {
             Log.e("getCategoryApps@Api", "Category is null or empty, returning all apps");
-            return this.getAllApps();
+            return this.getAllApps(context);
         }
-        return filterApps(getAllApps(), category, false);
+        return filterApps(getAllApps(context), category, false);
     }
 
     private ArrayList<AppShort> filterApps(ArrayList<AppShort> source, String value, boolean byAuthor) {
@@ -310,7 +303,7 @@ public class Api {
         return filtered;
     }
 
-    public App getApp(final int app_id) {
+    public App getApp(Context context, final int app_id) {
         final String url = String.format(Locale.ENGLISH, "%s/api/apps/%d.json", base_url, app_id);
         Log.d("Api", "line 178");
         Log.d("Api", url);
