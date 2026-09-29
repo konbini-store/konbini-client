@@ -25,6 +25,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
+import android.os.Build;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
@@ -221,7 +222,11 @@ public class MainActivity extends Activity {
         try {
             AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
             Intent i = new Intent(this, UpdateCheckService.class);
-            PendingIntent pi = PendingIntent.getService(this, 30001, i, PendingIntent.FLAG_UPDATE_CURRENT);
+            int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+            if (Build.VERSION.SDK_INT >= 23) {
+                flags |= PendingIntent.FLAG_IMMUTABLE;
+            }
+            PendingIntent pi = PendingIntent.getService(this, 30001, i, flags);
             long interval = 5L * 60L * 1000L;
             long first = System.currentTimeMillis() + 15000L;
             am.setInexactRepeating(AlarmManager.RTC_WAKEUP, first, interval, pi);

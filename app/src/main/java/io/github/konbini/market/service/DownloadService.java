@@ -11,6 +11,7 @@ import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -29,13 +30,17 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.Build;
+import android.provider.Settings;
 import android.util.Log;
 import android.widget.RemoteViews;
 
@@ -185,9 +190,14 @@ public class DownloadService extends Service {
                 o.put("file_path", t.filePath);
                 arr.put(o);
             }
-        } catch (Exception ex) {
+        } catch (Exception ignored) {
         }
-        prefs().edit().putString("tasks_json", arr.toString()).commit();
+        SharedPreferences.Editor fdjfk = prefs().edit().putString("tasks_json", arr.toString());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
+            fdjfk.apply();
+            return;
+        }
+        fdjfk.commit();
     }
 
     private void sendStateBroadcast(TaskInfo t, boolean done, boolean error, boolean cancelled) {
@@ -211,28 +221,53 @@ public class DownloadService extends Service {
     }
 
     private File outFile(String fileName) {
-        File dir;
-        if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            dir = new File(Environment.getExternalStorageDirectory(), "Konbini");
-        } else {
-            dir = getCacheDir();
+        File dir = null;
+        if (Build.VERSION.SDK_INT >= 8) {
+            dir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+        }
+        if (dir == null) {
+            if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+                dir = new File(Environment.getExternalStorageDirectory(), "Konbini");
+            } else {
+                dir = getCacheDir();
+            }
         }
         if (!dir.exists()) dir.mkdirs();
         return new File(dir, fileName);
+    }
+
+    private static int pendingIntentFlags(int baseFlags) {
+        if (Build.VERSION.SDK_INT >= 23) {
+            return baseFlags | PendingIntent.FLAG_IMMUTABLE;
+        }
+        return baseFlags;
     }
 
     private PendingIntent progressPendingIntent(int appId) {
         Intent open = new Intent(this, AppDetailActivity.class);
         open.putExtra("app_id", appId);
         open.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        return PendingIntent.getActivity(this, appId, open, PendingIntent.FLAG_UPDATE_CURRENT);
+        return PendingIntent.getActivity(this, appId, open, pendingIntentFlags(PendingIntent.FLAG_UPDATE_CURRENT));
     }
 
     private PendingIntent completePendingIntent(String filePath, int appId) {
+        File file = new File(filePath);
+        Uri apkUri = getApkUri(this, file);
         Intent open = new Intent(Intent.ACTION_VIEW);
-        open.setDataAndType(Uri.fromFile(new File(filePath)), "application/vnd.android.package-archive");
+        open.setDataAndType(apkUri, "application/vnd.android.package-archive");
         open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        return PendingIntent.getActivity(this, 10000 + appId, open, PendingIntent.FLAG_UPDATE_CURRENT);
+        open.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+        if (Build.VERSION.SDK_INT >= 24) {
+            List<ResolveInfo> resInfoList = getPackageManager().queryIntentActivities(open, PackageManager.MATCH_DEFAULT_ONLY);
+            for (ResolveInfo resolveInfo : resInfoList) {
+                if (resolveInfo.activityInfo != null && resolveInfo.activityInfo.packageName != null) {
+                    grantUriPermission(resolveInfo.activityInfo.packageName, apkUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                }
+            }
+        }
+
+        return PendingIntent.getActivity(this, 10000 + appId, open, pendingIntentFlags(PendingIntent.FLAG_UPDATE_CURRENT));
     }
 
     private Notification makeProgressNotification(TaskInfo t) {
@@ -345,13 +380,36 @@ public class DownloadService extends Service {
         );
     }
 
+    public static Uri getApkUri(Context context, File file) {
+        return (Build.VERSION.SDK_INT >= 24) ?
+                Uri.parse("content://" + APKFileProvider.AUTHORITY + file.getAbsolutePath()) :
+                Uri.fromFile(file);
+    }
+
+    public static void installApk(Context context, File file) {
+        Uri apkUri = getApkUri(context, file);
+        Intent open = new Intent(Intent.ACTION_VIEW);
+        open.setDataAndType(apkUri, "application/vnd.android.package-archive");
+        open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        open.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+        if (Build.VERSION.SDK_INT >= 24) {
+            List<ResolveInfo> resInfoList = context.getPackageManager().queryIntentActivities(open, PackageManager.MATCH_DEFAULT_ONLY);
+            for (ResolveInfo resolveInfo : resInfoList) {
+                if (resolveInfo.activityInfo != null && resolveInfo.activityInfo.packageName != null) {
+                    context.grantUriPermission(resolveInfo.activityInfo.packageName, apkUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                }
+            }
+        }
+
+        context.startActivity(open);
+    }
+
     private void launchPackageInstaller(String filePath) {
         try {
-            Intent open = new Intent(Intent.ACTION_VIEW);
-            open.setDataAndType(Uri.fromFile(new File(filePath)), "application/vnd.android.package-archive");
-            open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(open);
+            installApk(this, new File(filePath));
         } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -428,7 +486,7 @@ public class DownloadService extends Service {
                 if (dt > 0) t.speed = (db * 1000L) / dt;
 
                 String speedText = (t.speed >= 1024 * 1024)
-                        ? String.format("%.1f MB/s", (t.speed / 1024f / 1024f))
+                        ? String.format(Locale.ENGLISH, "%.1f MB/s", (t.speed / 1024f / 1024f))
                         : Math.max(1, (t.speed / 1024)) + " KB/s";
                 t.statusText = t.percent + "%  -  " + speedText;
 
@@ -524,26 +582,24 @@ public class DownloadService extends Service {
         if (appPackage == null || appPackage.length() == 0
                 || !Boolean.TRUE.equals(Prefs.getAnalyticsConsent(this))) return;
 
-        final android.content.Context appContext = getApplicationContext();
-        new Thread(new Runnable() {
-            public void run() {
-                if (!Boolean.TRUE.equals(Prefs.getAnalyticsConsent(appContext))) return;
-                try {
-                    JSONObject payload = new JSONObject();
-                    payload.put("app_package", appPackage);
-                    payload.put("package_id", task.appId);
-                    payload.put("file", task.fileName);
-                    payload.put("device_manufacturer", Build.MANUFACTURER == null ? "" : Build.MANUFACTURER);
-                    payload.put("device_model", Build.MODEL == null ? "" : Build.MODEL);
-                    payload.put("device_api", Build.VERSION.SDK_INT);
-                    payload.put("device_locale", Locale.getDefault().toString());
+        final Context appContext = getApplicationContext();
+        new Thread(() -> {
+            if (!Boolean.TRUE.equals(Prefs.getAnalyticsConsent(appContext))) return;
+            try {
+                JSONObject payload = new JSONObject();
+                payload.put("app_package", appPackage);
+                payload.put("package_id", task.appId);
+                payload.put("file", task.fileName);
+                payload.put("device_manufacturer", Build.MANUFACTURER == null ? "" : Build.MANUFACTURER);
+                payload.put("device_model", Build.MODEL == null ? "" : Build.MODEL);
+                payload.put("device_api", Build.VERSION.SDK_INT);
+                payload.put("device_locale", Locale.getDefault().toString());
 
-                    String server = Prefs.getSocialServer(appContext);
-                    while (server.endsWith("/")) server = server.substring(0, server.length() - 1);
-                    Http.postJson(appContext, server + "/api/download", payload.toString());
-                } catch (Exception e) {
-                    Log.w(TAG, "Failed to log download", e);
-                }
+                String server = Prefs.getSocialServer(appContext);
+                while (server.endsWith("/")) server = server.substring(0, server.length() - 1);
+                Http.postJson(appContext, server + "/api/download", payload.toString());
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to log download", e);
             }
         }).start();
     }

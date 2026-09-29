@@ -22,6 +22,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.IBinder;
 
 public class UpdateCheckService extends Service {
@@ -88,7 +89,11 @@ public class UpdateCheckService extends Service {
         Intent open = new Intent(this, AppDetailActivity.class);
         open.putExtra("app_id", appId);
         open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pi = PendingIntent.getActivity(this, 20000 + appId, open, PendingIntent.FLAG_UPDATE_CURRENT);
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= 23) {
+            flags |= PendingIntent.FLAG_IMMUTABLE;
+        }
+        PendingIntent pi = PendingIntent.getActivity(this, 20000 + appId, open, flags);
 
         int iconRes = getResources().getIdentifier("stat_notify_marketplace_update", "drawable", getPackageName());
         if (iconRes == 0) iconRes = android.R.drawable.stat_notify_more;

@@ -990,10 +990,7 @@ public class AppDetailActivity extends Activity {
     private void openInstaller(String path) {
         try {
             File f = new File(path);
-                    Intent intent = new Intent(Intent.ACTION_VIEW);
-                    intent.setDataAndType(Uri.fromFile(f), "application/vnd.android.package-archive");
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
+            DownloadService.installApk(this, f);
         } catch (Exception e) { }
     }
 
