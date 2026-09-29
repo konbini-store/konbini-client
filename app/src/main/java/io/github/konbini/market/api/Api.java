@@ -51,10 +51,13 @@ public class Api {
 
         if (this.sdk >= Build.VERSION_CODES.LOLLIPOP) {
             for (int i = 0; i < Build.SUPPORTED_ABIS.length; i++) {
-                supportedAbis += (Build.SUPPORTED_ABIS[i]) + ((i < Build.SUPPORTED_ABIS.length - 1) ? "," : "");
+                supportedAbis += (Build.SUPPORTED_ABIS[i]) +
+                        ((i < Build.SUPPORTED_ABIS.length - 1) ? "," : "");
             }
         } else {
-            supportedAbis = (Build.CPU_ABI+","+Build.CPU_ABI2);
+            supportedAbis = (Build.CPU_ABI+
+                        ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.FROYO) ?
+                                "," + Build.CPU_ABI2 : ""));
         }
 
         Log.d("Supported ABIs", supportedAbis);
@@ -66,23 +69,23 @@ public class Api {
     private void fetchServerMetadata() {
         AsyncHttpClient client = new AsyncHttpClient();
         String url = String.format(Locale.ENGLISH, "%s/api/meta.json", this.base_url);
-        Log.d("Api", "Metadata check");
-        Log.d("Api", url);
+        Log.d("fetchServerMetadata@Api", "Metadata check");
+        Log.d("fetchServerMetadata@Api", url);
 
         client.get(url, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
-                Log.i("Api", String.format(Locale.ENGLISH, "Got %d status code, yay!", statusCode));
+                Log.i("fetchServerMetadata@Api", String.format(Locale.ENGLISH, "Got %d status code, yay!", statusCode));
                 try {
                     String result = new String(responseBody, "UTF-8");
-                    Log.d("Api", "meta.json onSuccess: " + result);
+                    Log.d("fetchServerMetadata@Api", "meta.json onSuccess: " + result);
                     serverMetadata = new ServerMetadata(new JSONObject(result));
-                    Log.d("Api", "Server last updated: " + serverMetadata.getLastUpdated());
+                    Log.d("fetchServerMetadata@Api", "Server last updated: " + serverMetadata.getLastUpdated());
 
                     long lastUpdated = Prefs.getServerLastUpdated(context);
                     if (lastUpdated != serverMetadata.getLastUpdated()) {
                         cacheOutdated = true;
-                        Log.d("Api", "fetchServerMetadata: outdated cache!");
+                        Log.d("fetchServerMetadata@Api", "fetchServerMetadata: outdated cache!");
                         Prefs.setServerLastUpdated(context, serverMetadata.getLastUpdated());
                         Prefs.clearCache(context);
                     }
@@ -210,11 +213,11 @@ public class Api {
         ArrayList<AppShort> source = getAllApps();
         if (source == null) return null;
 
-        String normalizedQuery = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+        String normalizedQuery = query == null ? "" : query.trim().toLowerCase(Locale.US);
         ArrayList<AppShort> matches = new ArrayList<>();
         for (AppShort app : source) {
-            String name = app.name == null ? "" : app.name.toLowerCase(Locale.ROOT);
-            String packageName = app.packageName == null ? "" : app.packageName.toLowerCase(Locale.ROOT);
+            String name = app.name == null ? "" : app.name.toLowerCase(Locale.US);
+            String packageName = app.packageName == null ? "" : app.packageName.toLowerCase(Locale.US);
             if (name.contains(normalizedQuery) || packageName.contains(normalizedQuery)) {
                 matches.add(app);
             }
