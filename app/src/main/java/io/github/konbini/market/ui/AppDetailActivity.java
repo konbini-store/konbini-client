@@ -15,12 +15,19 @@ import io.github.konbini.market.api.*;
 import io.github.konbini.market.R;
 import io.github.konbini.market.net.Http;
 import io.github.konbini.market.service.DownloadService;
-import io.github.konbini.market.tasks.LoadScreenshotsAsyncTask;
+import io.github.konbini.market.ui.tasks.AddReviewCommentAsyncTask;
+import io.github.konbini.market.ui.tasks.LoadDetailsAsyncTask;
+import io.github.konbini.market.ui.tasks.LoadScreenshotsAsyncTask;
+import io.github.konbini.market.ui.tasks.ReportReviewAsyncTask;
+import io.github.konbini.market.ui.tasks.SendReactionAsyncTask;
+import io.github.konbini.market.ui.tasks.SendReviewAsyncTask;
+import io.github.konbini.market.ui.tasks.ShowCommentsAsyncTask;
 import io.github.konbini.market.util.AndroidVersions;
 import io.github.konbini.market.util.ImageLoader;
 import io.github.konbini.market.util.LocaleHelper;
 import io.github.konbini.market.util.Prefs;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
@@ -34,12 +41,10 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
-import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -55,21 +60,25 @@ import android.widget.Toast;
 import static android.view.View.GONE;
 
 public class AppDetailActivity extends Activity {
-    private int appId;
+    public int appId;
 
     private View header;
-    private ImageView imgIcon;
-    private TextView txtName, txtAuthor, txtMeta, txtDesc, txtToggle;
+    public ImageView imgIcon;
+    public TextView txtName;
+    public TextView txtAuthor;
+    public TextView txtMeta;
+    public TextView txtDesc;
+    public TextView txtToggle;
     private ImageView imgAndroidHeaderLogo;
-    private TextView txtDownloadsInfo;
-    TextView txtReviewsInfo;
-    private TextView txtHeaderRating;
+    public TextView txtDownloadsInfo;
+    public TextView txtReviewsInfo;
+    public TextView txtHeaderRating;
     TextView txtreviewinfo;
-    private RatingBar ratingHeader;
+    public RatingBar ratingHeader;
     RatingBar ratingAddReview;
     private Button btnInstall, btnOpen, btnUninstall, btnCancelDownload;
     public TextView txtScreensTitle;
-    TextView txtReviewsTitle;
+    public TextView txtReviewsTitle;
     private TextView txtDownloadProgress;
     public HorizontalScrollView screensScroll;
     public LinearLayout screensContainer;
@@ -86,124 +95,21 @@ public class AppDetailActivity extends Activity {
     ReviewAdapter adapter;
     private int activeTab = 0;
 
-    private String pkgName = "";
+    public String pkgName = "";
     private String selectedVersion = "";
     private int currentMinApi = 1;
     boolean hasOwnReview = false;
-    private String currentIconFile = "";
+    public String currentIconFile = "";
 
     private View loadingOverlay;
     private TextView txtLoading;
 
     public App app;
-    private Boolean appInitialized = false;
+    public Boolean appInitialized = false;
 
-    private boolean descCollapsed = true;
+    public boolean descCollapsed = true;
 
-    private Api api;
-
-    private static class LoadDetailsAsyncTask extends AsyncTask<Void, Void, App> {
-        private final WeakReference<AppDetailActivity> context;
-
-        private LoadDetailsAsyncTask(WeakReference<AppDetailActivity> context) {
-            this.context = context;
-        }
-
-        @Override
-        protected App doInBackground(Void... v) {
-            AppDetailActivity activity = context.get();
-            Api api = activity.api;
-            Logger logger = Logger.getLogger(activity.getPackageName());
-            try {
-                return api.getApp(activity, activity.appId);
-            } catch (Exception e) {
-                logger.log(Level.SEVERE, e.getMessage());
-                activity.appInitialized = true;
-                return null;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(App o) {
-            AppDetailActivity activity = context.get();
-            activity.showLoading(false, null);
-            if (o == null) {
-                activity.msg(activity.getString(R.string.error_network));
-                return;
-            }
-
-            activity.app = o;
-            String name = o.name;
-            final String dev = o.author;
-            final String desc = o.description == null ? "" : o.description;
-            final String shortDesc = desc.length() > 100 ? desc.substring(0, 100) + "..." : desc;
-            String icon = o.icon;
-            activity.currentIconFile = icon;
-
-            int downloads = 0;
-            int reviewCount = 0;
-            float avgRating = 0;
-            activity.pkgName = o.packageId;
-
-            activity.txtName.setText(name);
-            activity.txtAuthor.setText(dev);
-            AppVersion firstVersion = activity.app.getFirstVersion();
-            AppVersion lastVersion = activity.app.getLastVersion();
-            String compatibility = "";
-            if (firstVersion != null) {
-                String range = firstVersion.versionName;
-                if (lastVersion != null && lastVersion.versionName != null && !lastVersion.versionName.equals(firstVersion.versionName)) {
-                    range = firstVersion.versionName + " – " + lastVersion.versionName;
-                }
-                compatibility += activity.getString(R.string.version) + " " + range;
-            }
-            if (firstVersion != null) {
-                compatibility += " • Android " + AndroidVersions.apiToAndroid(firstVersion.minSdk) + " (API " + firstVersion.minSdk + ")";
-            }
-            compatibility += activity.app.isSupported() ? " • Compatible" : " • Not compatible";
-            activity.txtMeta.setText(compatibility);
-            activity.txtMeta.setVisibility(View.VISIBLE);
-
-            activity.txtAuthor.setOnClickListener(v -> {
-                Intent intent = new Intent(activity, CategoryAppsActivity.class);
-                intent.putExtra("type", "author");
-                intent.putExtra("query", dev);
-                intent.putExtra("title", "by "+dev);
-                activity.startActivity(intent);
-            });
-            if (desc.length() > 100) {
-                activity.txtDesc.setText(shortDesc);
-                activity.txtToggle.setVisibility(View.VISIBLE);
-                activity.txtToggle.setOnClickListener(v -> {
-                    activity.descCollapsed = !activity.descCollapsed;
-                    activity.txtToggle.setText(activity.descCollapsed ? R.string.expand_desc : R.string.collapse_desc);
-                    activity.txtDesc.setText(activity.descCollapsed ? shortDesc : desc);
-                });
-            } else {
-                activity.txtDesc.setText(desc);
-            }
-            activity.txtDownloadsInfo.setText(downloads + " " + activity.getString(R.string.downloads_count));
-            activity.txtReviewsInfo.setText(reviewCount + " " + activity.getString(R.string.reviews_count));
-            activity.txtHeaderRating.setText(String.format(Locale.US, "%.1f", avgRating));
-            activity.ratingHeader.setRating(avgRating);
-            activity.txtReviewsTitle.setText(activity.getString(R.string.reviews) + " (" + reviewCount + ")");
-
-            if (icon != null && icon.length() > 0) {
-                ImageLoader.load(activity, icon, activity.imgIcon, R.drawable.icon_placeholder);
-            } else {
-                activity.imgIcon.setImageResource(R.drawable.icon_placeholder);
-            }
-
-            activity.refreshInstalledButtons(activity.app);
-            activity.restoreDownloadState();
-            activity.bindVersionsTab();
-
-            activity.loadScreenshots();
-            activity.loadReviews();
-        }
-    }
-
-
+    public Api api;
 
     private final BroadcastReceiver dlReceiver = new BroadcastReceiver() {
         @Override
@@ -235,6 +141,7 @@ public class AppDetailActivity extends Activity {
         }
     };
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
@@ -288,84 +195,54 @@ public class AppDetailActivity extends Activity {
         adapter = new ReviewAdapter();
         list.setAdapter(adapter);
 
-        list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                if (position < 0 || position >= reviews.size()) return;
-                showReviewActionsDialog(reviews.get(position));
-            }
+        list.setOnItemClickListener((parent, view, position, id) -> {
+            if (position < 0 || position >= reviews.size()) return;
+            showReviewActionsDialog(reviews.get(position));
         });
 
-        btnInstall.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                AppVersion target = getLatestSupportedVersion();
-                if (target != null) {
-                    startDownload(target.id);
-                } else {
-                    chooseVersionAndDownload();
-                }
+        btnInstall.setOnClickListener(v -> {
+            AppVersion target = getLatestSupportedVersion();
+            if (target != null) {
+                startDownload(target.id);
+            } else {
+                Toast.makeText(this, "Unable to find the latest supported version.",
+                        Toast.LENGTH_SHORT).show();
             }
         });
-        btnOpen.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) { openApp(); }
-        });
-        btnUninstall.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) { uninstallApp(); }
-        });
-        btnCancelDownload.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent i = new Intent(AppDetailActivity.this, DownloadService.class);
-                i.setAction(DownloadService.ACTION_CANCEL);
-                i.putExtra("app_id", appId);
-                startService(i);
-            }
+        btnOpen.setOnClickListener(v -> openApp());
+        btnUninstall.setOnClickListener(v -> uninstallApp());
+        btnCancelDownload.setOnClickListener(v -> {
+            Intent i = new Intent(AppDetailActivity.this, DownloadService.class);
+            i.setAction(DownloadService.ACTION_CANCEL);
+            i.putExtra("app_id", appId);
+            startService(i);
         });
 
-        btnTabDetails.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) { showTab(0); }
-        });
-        btnTabVersions.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) { showTab(1); }
-        });
-        btnTabReviews.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) { showTab(2); }
-        });
-        listVersions.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                AppVersion version = ((AppVersionAdapter) parent.getAdapter()).getItem(position);
-                if (version != null) startDownload(version.id);
-            }
+        btnTabDetails.setOnClickListener(v -> showTab(0));
+        btnTabVersions.setOnClickListener(v -> showTab(1));
+        btnTabReviews.setOnClickListener(v -> showTab(2));
+        listVersions.setOnItemClickListener((parent, view, position, id) -> {
+            AppVersion version = ((AppVersionAdapter) parent.getAdapter()).getItem(position);
+            if (version != null) startDownload(version.id);
         });
 
-        ratingAddReview.setOnTouchListener(new View.OnTouchListener() {
-
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                v.performClick();
-                if (event.getAction() != MotionEvent.ACTION_UP) return true;
-                if (!Prefs.isLoggedIn(AppDetailActivity.this)) {
-                    startActivity(new Intent(AppDetailActivity.this, LoginActivity.class));
-                    return true;
-                }
-                if (hasOwnReview) return true;
-                RatingBar rb = (RatingBar) v;
-                float stars = rb.getNumStars() * event.getX() / Math.max(1f, rb.getWidth());
-                int rating = (int) Math.ceil(stars);
-                if (rating < 1) rating = 1;
-                if (rating > 5) rating = 5;
-                rb.setRating(rating);
-                showAddReviewDialog(rating);
-                rb.setRating(0f);
+        ratingAddReview.setOnTouchListener((v, event) -> {
+            v.performClick();
+            if (event.getAction() != MotionEvent.ACTION_UP) return true;
+            if (!Prefs.isLoggedIn(AppDetailActivity.this)) {
+                startActivity(new Intent(AppDetailActivity.this, LoginActivity.class));
                 return true;
             }
+            if (hasOwnReview) return true;
+            RatingBar rb = (RatingBar) v;
+            float stars = rb.getNumStars() * event.getX() / Math.max(1f, rb.getWidth());
+            int rating = (int) Math.ceil(stars);
+            if (rating < 1) rating = 1;
+            if (rating > 5) rating = 5;
+            rb.setRating(rating);
+            showAddReviewDialog(rating);
+            rb.setRating(0f);
+            return true;
         });
 //                (View v, MotionEvent event) -> {
 //            v.performClick();
@@ -417,7 +294,7 @@ public class AppDetailActivity extends Activity {
         return getSharedPreferences("download_state", MODE_PRIVATE);
     }
 
-    private void restoreDownloadState() {
+    public void restoreDownloadState() {
         SharedPreferences p = downloadPrefs();
         if (p.getBoolean("active", false) && p.getInt("app_id", -1) == appId) {
             showDownloadUi(p.getInt("percent", 0), p.getLong("speed_bps", 0));
@@ -460,7 +337,7 @@ public class AppDetailActivity extends Activity {
         btnTabReviews.setEnabled(true);
     }
 
-    private void bindVersionsTab() {
+    public void bindVersionsTab() {
         if (app == null || app.versions == null || app.versions.size() == 0) {
             listVersions.setAdapter(null);
             return;
@@ -486,14 +363,14 @@ public class AppDetailActivity extends Activity {
     private void loadDetails() {
         try { int androidLogoRes = getResources().getIdentifier("market_android_logo", "drawable", getPackageName()); if (imgAndroidHeaderLogo != null && androidLogoRes != 0) imgAndroidHeaderLogo.setImageResource(androidLogoRes); } catch (Exception e) { }
         showLoading(true, getString(R.string.loading));
-        new LoadDetailsAsyncTask(new WeakReference<>(this)).execute();
+        new LoadDetailsAsyncTask(this).execute();
     }
 
-    private void loadScreenshots() {
+    public void loadScreenshots() {
         new LoadScreenshotsAsyncTask(this).execute();
     }
 
-    private void loadReviews() {
+    public void loadReviews() {
         new LoadReviewsAsyncTask(this).execute();
     }
 
@@ -531,12 +408,9 @@ public class AppDetailActivity extends Activity {
         new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.post_review))
                 .setView(layout)
-                .setPositiveButton(getString(R.string.send_review), new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        String text = edt.getText().toString().trim();
-                        sendReview(text, presetRating);
-                    }
+                .setPositiveButton(getString(R.string.send_review), (dialog, which) -> {
+                    String text = edt.getText().toString().trim();
+                    sendReview(text, presetRating);
                 })
                 .setNegativeButton(getString(R.string.cancel_review), null)
                 .show();
@@ -550,99 +424,23 @@ public class AppDetailActivity extends Activity {
             return;
         }
         final int safeRating = Math.max(1, Math.min(5, rating));
-        new AsyncTask<Void, Void, String>() {
-            @Override
-            protected String doInBackground(Void... v) {
-                try {
-                    // TODO
-                    if (true) return null;
-                    String url = ""; //Api.baseUrl(AppDetailActivity.this) + "/api/app/" + appId + "/review";
-                    JSONObject o = new JSONObject();
-                    o.put("token", token);
-                    o.put("user_id", uid);
-                    o.put("rating", safeRating);
-                    o.put("comment", text);
-                    return Http.postJson(AppDetailActivity.this, url, o.toString());
-                } catch (Exception e) {
-                    return null;
-                }
-            }
-            @Override
-            protected void onPostExecute(String s) {
-                if (s == null) {
-                    msg("Network error");
-                    return;
-                }
-                loadReviews();
-                Toast.makeText(AppDetailActivity.this, isRu() ? "Отправлено" : "Sent", Toast.LENGTH_SHORT).show();
-            }
-        }.execute();
+        new SendReviewAsyncTask(this, token, uid, safeRating, text).execute();
     }
 
     private void showCommentsDialog(final int reviewId) {
-        new AsyncTask<Void, Void, Object>() {
-            @Override
-            protected Object doInBackground(Void... v) {
-                try {
-                    // TODO
-                    String s = null; //Http.getString(Api.reviewCommentsUrl(AppDetailActivity.this, reviewId));
-                    if (s == null) return "null response";
-                    return new JSONArray(s);
-                } catch (Exception e) {
-                    return e.toString();
-                }
-            }
-            @Override
-            protected void onPostExecute(Object out) {
-                if (out instanceof String) {
-                    msg("Comments error: " + out);
-                    return;
-                }
-                JSONArray arr = (JSONArray) out;
-                final String[] items = new String[arr.length()];
-                for (int i = 0; i < arr.length(); i++) {
-                    JSONObject c = arr.optJSONObject(i);
-                    if (c == null) {
-                        items[i] = String.valueOf(arr.opt(i));
-                    } else {
-                        String u = c.optString("username", "User");
-                        String t = c.optString("text", "");
-                        String d = c.optString("created_at", "");
-                        items[i] = u + ": " + t + (d.length() > 0 ? ("  (" + d + ")") : "");
-                    }
-                }
-                new AlertDialog.Builder(AppDetailActivity.this)
-                        .setTitle(isRu() ? "Комментарии" : "Comments")
-                        .setItems(items, null)
-                        .setPositiveButton(isRu() ? "Добавить" : "Add", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                if (!Prefs.isLoggedIn(AppDetailActivity.this)) {
-                                    startActivity(new Intent(AppDetailActivity.this, LoginActivity.class));
-                                    return;
-                                }
-                                showAddCommentDialog(reviewId);
-                            }
-                        })
-                        .setNegativeButton(isRu() ? "Закрыть" : "Close", null)
-                        .show();
-            }
-        }.execute();
+        new ShowCommentsAsyncTask(this, reviewId).execute();
     }
 
-    private void showAddCommentDialog(final int reviewId) {
+    public void showAddCommentDialog(final int reviewId) {
         final EditText edt = new EditText(this);
         edt.setHint(isRu() ? "Комментарий" : "Comment");
         new AlertDialog.Builder(this)
                 .setTitle(isRu() ? "Добавить комментарий" : "Add comment")
                 .setView(edt)
-                .setPositiveButton(isRu() ? "Отправить" : "Send", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface d, int w) {
-                        String text = edt.getText().toString().trim();
-                        if (text.length() == 0) return;
-                        addReviewComment(reviewId, text);
-                    }
+                .setPositiveButton(isRu() ? "Отправить" : "Send", (d, w) -> {
+                    String text = edt.getText().toString().trim();
+                    if (text.length() == 0) return;
+                    addReviewComment(reviewId, text);
                 })
                 .setNegativeButton(isRu() ? "Отмена" : "Cancel", null)
                 .show();
@@ -654,28 +452,7 @@ public class AppDetailActivity extends Activity {
             msg("Login required");
             return;
         }
-        new AsyncTask<Void, Void, String>() {
-            @Override
-            protected String doInBackground(Void... v) {
-                try {
-                    JSONObject o = new JSONObject();
-                    o.put("user_id", uid);
-                    o.put("text", text);
-                    // TODO
-                    return null; //Http.postJson(AppDetailActivity.this, Api.reviewAddCommentUrl(AppDetailActivity.this, reviewId), o.toString());
-                } catch (Exception e) {
-                    return null;
-                }
-            }
-            @Override
-            protected void onPostExecute(String s) {
-                if (s == null) {
-                    msg("Network error");
-                    return;
-                }
-                loadReviews();
-            }
-        }.execute();
+        new AddReviewCommentAsyncTask(this, reviewId, text, uid).execute();
     }
 
     private void sendReaction(final int reviewId, final int value) {
@@ -684,28 +461,7 @@ public class AppDetailActivity extends Activity {
             msg("Login required");
             return;
         }
-        new AsyncTask<Void, Void, String>() {
-            @Override
-            protected String doInBackground(Void... v) {
-                try {
-                    JSONObject o = new JSONObject();
-                    o.put("user_id", uid);
-                    o.put("value", value);
-                    // TODO
-                    return null; //Http.postJson(AppDetailActivity.this, Api.reviewReactionUrl(AppDetailActivity.this, reviewId), o.toString());
-                } catch (Exception e) {
-                    return null;
-                }
-            }
-            @Override
-            protected void onPostExecute(String s) {
-                if (s == null) {
-                    msg("Network error");
-                    return;
-                }
-                loadReviews();
-            }
-        }.execute();
+        new SendReactionAsyncTask(this, reviewId, value, uid).execute();
     }
 
     private void reportReview(final int reviewId) {
@@ -714,149 +470,48 @@ public class AppDetailActivity extends Activity {
             msg("Login required");
             return;
         }
-        new AsyncTask<Void, Void, String>() {
-            @Override
-            protected String doInBackground(Void... v) {
-                try {
-                    JSONObject o = new JSONObject();
-                    o.put("user_id", uid);
-                    // TODO
-                    return null;
-//                    return Http.postJson(AppDetailActivity.this, Api.reviewReportUrl(AppDetailActivity.this, reviewId), o.toString());
-                } catch (Exception e) {
-                    return null;
-                }
-            }
-            @Override
-            protected void onPostExecute(String s) {
-                if (s == null) {
-                    msg("Network error");
-                    return;
-                }
-                msg(isRu() ? "Отправлено" : "Reported");
-            }
-        }.execute();
-    }
-
-    private void chooseVersionAndDownload() {
-        if (!btnInstall.isEnabled()) return;
-        showLoading(true, getString(R.string.loading_versions));
-        new AsyncTask<Void, Void, SparseArray<AppVersion>>() {
-            @Override
-            protected SparseArray<AppVersion> doInBackground(Void... v) {
-                try {
-                    return app.versions;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return null;
-                }
-            }
-            @Override
-            protected void onPostExecute(SparseArray<AppVersion> out) {
-                showLoading(false, null);
-                if (out == null) {
-                    Toast.makeText(AppDetailActivity.this, "Failed to parse version list.", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                Logger.getLogger(AppDetailActivity.this.getPackageName()).log(Level.INFO, out.getClass().getName());
-                Logger.getLogger(AppDetailActivity.this.getPackageName()).log(Level.INFO, out.toString());
-                Logger.getLogger(AppDetailActivity.this.getPackageName()).log(Level.INFO, out.getClass().getName());
-                Logger.getLogger(AppDetailActivity.this.getPackageName()).log(Level.INFO, out.toString());
-                Logger.getLogger(AppDetailActivity.this.getPackageName()).log(Level.INFO, String.valueOf(out.size()));
-                if (out.size() == 0) {
-                    Toast.makeText(AppDetailActivity.this, "Failed to parse version list.", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-//                final ArrayList<String> versList = new ArrayList<>();
-//                final ArrayList<Integer> versValue = new ArrayList<>();
-//                for (int i = 0; i < out.size(); i++) {
-//                    AppVersion version = out.valueAt(i);
-//
-//                    if (!version.isSupported()) continue;
-//
-//
-//                    String label = String.format(Locale.ENGLISH,
-//                            "%s (%d) - Android %s (API %d) - %s", version.versionName,
-//                            version.versionCode, AndroidVersions.apiToAndroid(version.minSdk),
-//                            version.minSdk, abisList);
-//
-//                    versList.add(label);
-//                    versValue.add(version.id);
-//                }
-//                if (versList.size() == 0) {
-//                    Toast.makeText(AppDetailActivity.this, "Failed to parse version list.", Toast.LENGTH_SHORT).show();
-//                    return;
-//                }
-                AppVersionAdapter adapter = new AppVersionAdapter(AppDetailActivity.this, app.versions);
-
-                new AlertDialog.Builder(AppDetailActivity.this)
-                        .setTitle(isRu() ? "Выберите версию" : "Select version")
-                        .setAdapter(adapter, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                startDownload(app.versions.keyAt(which));
-                            }
-                        })
-                        .setNegativeButton(isRu() ? "Отмена" : "Cancel", null)
-                        .show();
-
-            }
-        }.execute();
+        new ReportReviewAsyncTask(this, reviewId, uid).execute();
     }
 
     private void startDownload(final int version_id) {
-        final int uid = Prefs.getUserId(this);
-        final String url;
 
         // Create a background thread to handle the network operation
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-            String url = null;
-            try {
-                Log.d("AppDetailActivity", "Versions found: "+String.valueOf(app.versions.size()));
-                Log.d("AppDetailActivity", "Version requested: "+String.valueOf(version_id));
-                for (int i = 0; i < app.versions.size(); i++) {
-                    Log.d("AppDetailActivity", "Version found: "+app.versions.keyAt(i));
-                }
-                AppVersion version = app.versions.get(version_id, null);
-
-                if (version == null) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(AppDetailActivity.this, "Failed to get the app.", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                    return;
-                }
-
-                final String finalUrl = version.downloadUrl;
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Intent i = new Intent(AppDetailActivity.this, DownloadService.class);
-                        i.setAction(DownloadService.ACTION_START);
-                        i.putExtra("app_id", appId);
-                        i.putExtra("app_name", txtName == null ? "" : String.valueOf(txtName.getText()));
-                        i.putExtra("app_package", app == null ? "" : app.packageId);
-                        i.putExtra("icon", currentIconFile == null ? "" : currentIconFile);
-                        i.putExtra("url", finalUrl);
-                        i.putExtra("file_name", "konbini_" + appId + (selectedVersion.length() > 0 ? ("_" + selectedVersion) : "") + ".apk");
-                        startService(i);
-                        showDownloadUi(0, 0);
-                    }
-                });
-
-            } catch (Exception e) {
-                Log.e("AppDetailActivity", "Error fetching download URL", e);
+        new Thread(() -> {
+        String url1 = null;
+        try {
+            Log.d("AppDetailActivity", "Versions found: "+ app.versions.size());
+            Log.d("AppDetailActivity", "Version requested: "+ version_id);
+            for (int i = 0; i < app.versions.size(); i++) {
+                Log.d("AppDetailActivity", "Version found: "+app.versions.keyAt(i));
             }
+            AppVersion version = app.versions.get(version_id, null);
+
+            if (version == null) {
+                runOnUiThread(() -> Toast.makeText(AppDetailActivity.this, "Failed to get the app.", Toast.LENGTH_SHORT).show());
+                return;
             }
+
+            final String finalUrl = version.downloadUrl;
+            runOnUiThread(() -> {
+                Intent i = new Intent(AppDetailActivity.this, DownloadService.class);
+                i.setAction(DownloadService.ACTION_START);
+                i.putExtra("app_id", appId);
+                i.putExtra("app_name", txtName == null ? "" : String.valueOf(txtName.getText()));
+                i.putExtra("app_package", app == null ? "" : app.packageId);
+                i.putExtra("icon", currentIconFile == null ? "" : currentIconFile);
+                i.putExtra("url", finalUrl);
+                i.putExtra("file_name", "konbini_" + appId + (selectedVersion.length() > 0 ? ("_" + selectedVersion) : "") + ".apk");
+                startService(i);
+                showDownloadUi(0, 0);
+            });
+
+        } catch (Exception e) {
+            Log.e("AppDetailActivity", "Error fetching download URL", e);
+        }
         }).start();
     }
 
-    private void refreshInstalledButtons(App app) {
+    public void refreshInstalledButtons(App app) {
         String pkgName = (app == null) ? "" : app.packageId;
         boolean installed = pkgName != null && pkgName.length() > 0 && isInstalled(pkgName);
         if (app == null || !app.isSupported()) {
@@ -868,21 +523,13 @@ public class AppDetailActivity extends Activity {
             return;
         }
 
-        if (installed) {
-            btnInstall.setVisibility(View.VISIBLE);
-            btnOpen.setVisibility(View.VISIBLE);
-            btnUninstall.setVisibility(View.VISIBLE);
-            btnInstall.setText(isRu() ? "Скачать" : "Download");
-            btnOpen.setText(getString(R.string.open));
-            btnUninstall.setText(getString(R.string.uninstall));
-            btnInstall.setEnabled(true);
-        } else {
-            btnInstall.setVisibility(View.VISIBLE);
-            btnOpen.setVisibility(GONE);
-            btnUninstall.setVisibility(GONE);
-            btnInstall.setText(getString(R.string.install));
-            btnInstall.setEnabled(true);
-        }
+        btnInstall.setVisibility(View.VISIBLE);
+        btnOpen.setText(getString(R.string.open));
+        btnOpen.setVisibility(installed ? View.VISIBLE : GONE);
+        btnUninstall.setText(getString(R.string.uninstall));
+        btnUninstall.setVisibility(installed ? View.VISIBLE : GONE);
+        btnInstall.setText("Download");
+        btnInstall.setEnabled(true);
     }
 
     private boolean isInstalled(String packageName) {
@@ -916,21 +563,21 @@ public class AppDetailActivity extends Activity {
         } catch (Exception e) { }
     }
 
-    private void msg(String s) {
+    public void msg(String s) {
         try {
             new AlertDialog.Builder(this).setMessage(s).setPositiveButton("OK", null).show();
         } catch (Exception e) { }
     }
 
-    private void showLoading(boolean show, String text) {
+    public void showLoading(boolean show, String text) {
         if (txtLoading != null && text != null) txtLoading.setText(text);
         if (loadingOverlay != null) loadingOverlay.setVisibility(show ? View.VISIBLE : GONE);
     }
 
-    private boolean isRu() {
+    public boolean isRu() {
         try {
             String lang = Locale.getDefault().getLanguage();
-            return lang != null && lang.toLowerCase().startsWith("ru");
+            return lang.toLowerCase().startsWith("ru");
         } catch (Exception e) {
             return false;
         }
@@ -978,44 +625,29 @@ public class AppDetailActivity extends Activity {
                 .setNegativeButton(isRu() ? "Закрыть" : "Close", null)
                 .create();
 
-        btnProfile.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-                if (r.userId > 0) {
-                    Intent i = new Intent(AppDetailActivity.this, UserProfileActivity.class);
-                    i.putExtra("user_id", r.userId);
-                    startActivity(i);
-                }
+        btnProfile.setOnClickListener(v -> {
+            dialog.dismiss();
+            if (r.userId > 0) {
+                Intent i = new Intent(AppDetailActivity.this, UserProfileActivity.class);
+                i.putExtra("user_id", r.userId);
+                startActivity(i);
             }
         });
-        btnLike.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-                sendReaction(r.id, 1);
-            }
+        btnLike.setOnClickListener(v -> {
+            dialog.dismiss();
+            sendReaction(r.id, 1);
         });
-        btnDislike.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-                sendReaction(r.id, -1);
-            }
+        btnDislike.setOnClickListener(v -> {
+            dialog.dismiss();
+            sendReaction(r.id, -1);
         });
-        btnComments.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-                showCommentsDialog(r.id);
-            }
+        btnComments.setOnClickListener(v -> {
+            dialog.dismiss();
+            showCommentsDialog(r.id);
         });
-        btnReport.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-                reportReview(r.id);
-            }
+        btnReport.setOnClickListener(v -> {
+            dialog.dismiss();
+            reportReview(r.id);
         });
 
         dialog.show();
@@ -1045,22 +677,25 @@ public class AppDetailActivity extends Activity {
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-            if (convertView == null) {
-                convertView = LayoutInflater.from(AppDetailActivity.this).inflate(R.layout.list_item_review, parent, false);
-            }
+            convertView = convertView == null ?
+                    LayoutInflater.from(AppDetailActivity.this)
+                            .inflate(R.layout.list_item_review, parent,
+                                    false) : convertView;
+
             ReviewItem r = reviews.get(position);
-            ImageView imgUser = (ImageView) convertView.findViewById(R.id.imgUser);
-            TextView txtUser = (TextView) convertView.findViewById(R.id.txtUser);
-            TextView txtDate = (TextView) convertView.findViewById(R.id.txtDate);
-            TextView txtMetaLocal = (TextView) convertView.findViewById(R.id.txtMeta);
-            TextView txtText = (TextView) convertView.findViewById(R.id.txtText);
-            RatingBar rb = (RatingBar) convertView.findViewById(R.id.ratingBarReview);
+            ImageView imgUser = convertView.findViewById(R.id.imgUser);
+            TextView txtUser = convertView.findViewById(R.id.txtUser);
+            TextView txtDate = convertView.findViewById(R.id.txtDate);
+            TextView txtMetaLocal = convertView.findViewById(R.id.txtMeta);
+            TextView txtText = convertView.findViewById(R.id.txtText);
+            RatingBar rb = convertView.findViewById(R.id.ratingBarReview);
 
             txtUser.setText(r.username);
             txtDate.setText(r.createdAt);
             txtMetaLocal.setText("");
             txtText.setText(r.text);
             rb.setRating(r.rating);
+
             //TODO
             ImageLoader.load(AppDetailActivity.this, "" /*Api.avatarUrl(AppDetailActivity.this, r.avatar)*/, imgUser, R.drawable.icon_placeholder);
             return convertView;

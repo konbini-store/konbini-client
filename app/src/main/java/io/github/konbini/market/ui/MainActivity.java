@@ -344,7 +344,7 @@ public class MainActivity extends Activity {
     private ArrayList<String> loadBanner() {
         ArrayList<String> banners = new ArrayList<String>();
         try {
-            String s = Http.getString(this.api.getBaseUrl(this) + "/api/banners");
+            String s = Http.getString(this.api.getBaseUrl() + "/api/banners");
             if (s == null) return banners;
             JSONArray arr = new JSONArray(s);
             for (int i = 0; i < arr.length(); i++) {
@@ -483,7 +483,7 @@ public class MainActivity extends Activity {
             MainActivity activity = activityRef.get();
             if (activity == null) return null;
             try {
-                String s = Http.getString(activity.api.getBaseUrl(activity) + "/api/client-latest.json");
+                String s = Http.getString(activity.api.getBaseUrl() + "/api/client-latest.json");
                 if (s == null || s.length() == 0) return null;
                 return new JSONObject(s);
             } catch (Exception e) { return null; }

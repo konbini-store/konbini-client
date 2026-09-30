@@ -95,31 +95,36 @@ public class CategoryAppsActivity extends Activity {
 
         adapter = new AppListAdapter(this, items);
         list.setAdapter(adapter);
-        list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                int idx = position - list.getHeaderViewsCount();
-                if (idx < 0 || idx >= items.size()) return;
-                AppShort it = items.get(idx);
-                Intent i = new Intent(CategoryAppsActivity.this, AppDetailActivity.class);
-                i.putExtra("app_id", it.id);
-                startActivity(i);
-            }
+        list.setOnItemClickListener((parent, view, position, id) -> {
+            int idx = position - list.getHeaderViewsCount();
+            if (idx < 0 || idx >= items.size()) return;
+            AppShort it = items.get(idx);
+            Intent i = new Intent(CategoryAppsActivity.this, AppDetailActivity.class);
+            i.putExtra("app_id", it.id);
+            startActivity(i);
         });
 
-        if (btnTopFree != null) btnTopFree.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { sortDownloads = false; applySort(); updateTabButtons(); }
-        });
-        if (btnTopDownloads != null) btnTopDownloads.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { sortDownloads = true; applySort(); updateTabButtons(); }
-        });
-        if (promoRoot != null) promoRoot.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
+        if (btnTopFree != null)
+            btnTopFree.setOnClickListener(v -> {
+                sortDownloads = false;
+                applySort();
+                updateTabButtons();
+            });
+
+        if (btnTopDownloads != null)
+            btnTopDownloads.setOnClickListener(v -> {
+                sortDownloads = true;
+                applySort();
+                updateTabButtons();
+            });
+
+        if (promoRoot != null)
+            promoRoot.setOnClickListener(v -> {
                 if (promoApp == null) return;
                 Intent i = new Intent(CategoryAppsActivity.this, AppDetailActivity.class);
                 i.putExtra("app_id", promoApp.id);
                 startActivity(i);
-            }
-        });
+            });
 
         updateTabButtons();
         loadApps(type, query, isGame, appIds);

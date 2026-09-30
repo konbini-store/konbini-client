@@ -110,7 +110,7 @@ public class Api {
         return api;
     }
 
-    public String getBaseUrl(Context c) {
+    public String getBaseUrl() {
         return this.base_url;
     }
 
