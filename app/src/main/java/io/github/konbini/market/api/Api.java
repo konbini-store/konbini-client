@@ -28,7 +28,6 @@ public class Api {
     private ArrayList<AppShort> memoryFeaturedApps;
     private long memoryFeaturedAppsAt;
 
-    private String supportedAbis = "";
 
     private static Api instance;
 
@@ -44,21 +43,6 @@ public class Api {
             this.base_url = "http://"+this.base_url;
         }
 
-        int sdk = Build.VERSION.SDK_INT;
-        if (sdk >= Build.VERSION_CODES.LOLLIPOP) {
-            for (int i = 0; i < Build.SUPPORTED_ABIS.length; i++) {
-                supportedAbis += (Build.SUPPORTED_ABIS[i]) +
-                        ((i < Build.SUPPORTED_ABIS.length - 1) ? "," : "");
-            }
-        } else {
-            supportedAbis = (Build.CPU_ABI+
-                        ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.FROYO) ?
-                                "," + Build.CPU_ABI2 : ""));
-        }
-
-        Log.d("Supported ABIs", supportedAbis);
-
-        // platformQueries = String.format(Locale.ENGLISH, "api=%d&abis=%s", sdk, supportedAbis);
         fetchServerMetadata(context);
     }
 
@@ -106,22 +90,20 @@ public class Api {
 
     public static synchronized Api getInstance(Context context) {
         String url = Prefs.getServer(context);
-        Api api = getInstance(context, url.equals("") ? default_base_url : url);
-        return api;
+        return getInstance(context, url.equals("") ? default_base_url : url);
     }
 
     public String getBaseUrl() {
         return this.base_url;
     }
 
-    public String getSupportedAbis() { return this.supportedAbis; }
-
     // Get featured apps
     public ArrayList<AppShort> getFeaturedApps(Context context) {
         final String url = base_url + "/api/featured.json";
         final ArrayList<AppShort> apps = new ArrayList<>();
         final boolean[] success = {false};
-        if (memoryFeaturedApps != null && System.currentTimeMillis() - memoryFeaturedAppsAt <= CACHE_TTL_MS) {
+        if (memoryFeaturedApps != null &&
+                System.currentTimeMillis() - memoryFeaturedAppsAt <= CACHE_TTL_MS) {
             return new ArrayList<>(memoryFeaturedApps);
         }
 
@@ -139,7 +121,6 @@ public class Api {
             public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
                 Log.i("Api", String.format(Locale.ENGLISH, "Got %d status code, yay!", statusCode));
                 String result;
-                JSONArray array;
                 try {
                     result = new String(responseBody, "UTF-8");
                     Log.d("Api", "onSuccess: "+result);
@@ -178,11 +159,10 @@ public class Api {
         Log.d("getAllApps@Api", "No cache found.");
 
         client.get(url, new AsyncHttpResponseHandler() {
-                @Override
-                public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
-                    Log.i("Api", String.format(Locale.ENGLISH, "Got %d status code, yay!", statusCode));
-                    String result;
-                JSONArray array;
+            @Override
+            public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
+                Log.i("Api", String.format(Locale.ENGLISH, "Got %d status code, yay!", statusCode));
+                String result;
                 try {
                     result = new String(responseBody, "UTF-8");
                     Log.d("Api", "onSuccess: "+result);
@@ -323,7 +303,6 @@ public class Api {
             public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
                 Log.i("Api", String.format(Locale.ENGLISH, "Got %d status code, yay!", statusCode));
                 String result;
-                JSONArray array;
                 try {
                     result = new String(responseBody, "UTF-8");
                     Log.d("Api", "onSuccess: "+result);
@@ -342,10 +321,5 @@ public class Api {
         });
         Log.d("Api", "getApp: " + (app[0] == null ? "null" : app[0].versions.size()));
         return success[0] ? app[0] : null;
-    }
-
-    public String clientUpdateAvailable() {
-        String url = this.base_url + "/api/client/update";
-        return null;
     }
 }
