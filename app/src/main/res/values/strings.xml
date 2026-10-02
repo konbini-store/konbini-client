@@ -81,7 +81,7 @@
     <string name="client_update_note_prefix">What is new: </string>
     <string name="store_name">Konbini</string>
     <string name="version">Version:</string>
-    <string name="app_contacts">no socials yet</string>
+    <string name="app_contacts" translatable="false">no socials yet</string>
     <string name="report">Report</string>
     <string name="comments">Comments (%1$d)</string>
     <string name="expand_desc">expand ▼</string>
@@ -91,4 +91,8 @@
     <string name="post_review">Post review</string>
     <string name="send_review">Send</string>
     <string name="cancel_review">Cancel</string>
+    <string name="download_action">Download</string>
+    <string name="profile_btn">Profile</string>
+    <string name="like_btn">Like (%d)</string>
+    <string name="dislike_btn">Dislike (%d)</string>
 </resources>

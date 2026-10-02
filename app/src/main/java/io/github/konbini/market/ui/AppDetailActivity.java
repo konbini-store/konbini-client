@@ -1,19 +1,14 @@
 package io.github.konbini.market.ui;
 
 import java.io.File;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import io.github.konbini.market.api.*;
 
 import io.github.konbini.market.R;
-import io.github.konbini.market.net.Http;
+import io.github.konbini.market.db.Database;
 import io.github.konbini.market.service.DownloadService;
 import io.github.konbini.market.ui.tasks.AddReviewCommentAsyncTask;
 import io.github.konbini.market.ui.tasks.LoadDetailsAsyncTask;
@@ -22,7 +17,6 @@ import io.github.konbini.market.ui.tasks.ReportReviewAsyncTask;
 import io.github.konbini.market.ui.tasks.SendReactionAsyncTask;
 import io.github.konbini.market.ui.tasks.SendReviewAsyncTask;
 import io.github.konbini.market.ui.tasks.ShowCommentsAsyncTask;
-import io.github.konbini.market.util.AndroidVersions;
 import io.github.konbini.market.util.ImageLoader;
 import io.github.konbini.market.util.LocaleHelper;
 import io.github.konbini.market.util.Prefs;
@@ -32,13 +26,11 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -69,7 +61,6 @@ public class AppDetailActivity extends Activity {
     public TextView txtMeta;
     public TextView txtDesc;
     public TextView txtToggle;
-    private ImageView imgAndroidHeaderLogo;
     public TextView txtDownloadsInfo;
     public TextView txtReviewsInfo;
     public TextView txtHeaderRating;
@@ -151,46 +142,46 @@ public class AppDetailActivity extends Activity {
         appId = getIntent().getIntExtra("app_id", 0);
 
         loadingOverlay = findViewById(R.id.loadingOverlay);
-        txtLoading = (TextView) findViewById(R.id.txtLoading);
-        detailsContainer = (LinearLayout) findViewById(R.id.detailsContainer);
-        reviewsTabContainer = (LinearLayout) findViewById(R.id.reviewsTabContainer);
+        txtLoading = findViewById(R.id.txtLoading);
+        detailsContainer = findViewById(R.id.detailsContainer);
+        reviewsTabContainer = findViewById(R.id.reviewsTabContainer);
         detailsScrollView = findViewById(R.id.detailsScrollView);
         reviewsScrollView = findViewById(R.id.reviewsScrollView);
-        list = (ListView) findViewById(R.id.listReviews);
-        listVersions = (ListView) findViewById(R.id.listVersions);
-        btnTabDetails = (Button) findViewById(R.id.btnTabDetails);
-        btnTabVersions = (Button) findViewById(R.id.btnTabVersions);
-        btnTabReviews = (Button) findViewById(R.id.btnTabReviews);
+        list = findViewById(R.id.listReviews);
+        listVersions = findViewById(R.id.listVersions);
+        btnTabDetails = findViewById(R.id.btnTabDetails);
+        btnTabVersions = findViewById(R.id.btnTabVersions);
+        btnTabReviews = findViewById(R.id.btnTabReviews);
 
         header = LayoutInflater.from(this).inflate(R.layout.app_detail_header, detailsContainer, false);
         detailsContainer.addView(header);
 
-        imgIcon = (ImageView) findViewById(R.id.imgIcon);
-        txtName = (TextView) findViewById(R.id.txtName);
-        txtAuthor = (TextView) findViewById(R.id.txtAuthor);
-        txtHeaderRating = (TextView) findViewById(R.id.txtHeaderRating);
-        ratingHeader = (RatingBar) findViewById(R.id.ratingHeader);
+        imgIcon = findViewById(R.id.imgIcon);
+        txtName = findViewById(R.id.txtName);
+        txtAuthor = findViewById(R.id.txtAuthor);
+        txtHeaderRating = findViewById(R.id.txtHeaderRating);
+        ratingHeader = findViewById(R.id.ratingHeader);
 
-        txtDownloadsInfo = (TextView) header.findViewById(R.id.txtDownloadsInfo);
-        txtReviewsInfo = (TextView) header.findViewById(R.id.txtReviewsInfo);
-        txtMeta = (TextView) header.findViewById(R.id.txtMeta);
-        txtDesc = (TextView) header.findViewById(R.id.txtDesc);
-        txtToggle = (TextView) header.findViewById(R.id.toggleDescriptionTextView);
-        txtScreensTitle = (TextView) header.findViewById(R.id.txtScreensTitle);
-        screensScroll = (HorizontalScrollView) header.findViewById(R.id.screensScroll);
-        screensContainer = (LinearLayout) header.findViewById(R.id.screensContainer);
-        txtReviewsTitle = (TextView) findViewById(R.id.txtReviewsTitle);
-        ratingAddReview = (RatingBar) findViewById(R.id.ratingAddReview);
-        txtreviewinfo = (TextView) findViewById(R.id.txtreviewinfo);
+        txtDownloadsInfo = header.findViewById(R.id.txtDownloadsInfo);
+        txtReviewsInfo = header.findViewById(R.id.txtReviewsInfo);
+        txtMeta = header.findViewById(R.id.txtMeta);
+        txtDesc = header.findViewById(R.id.txtDesc);
+        txtToggle = header.findViewById(R.id.toggleDescriptionTextView);
+        txtScreensTitle = header.findViewById(R.id.txtScreensTitle);
+        screensScroll = header.findViewById(R.id.screensScroll);
+        screensContainer = header.findViewById(R.id.screensContainer);
+        txtReviewsTitle = findViewById(R.id.txtReviewsTitle);
+        ratingAddReview = findViewById(R.id.ratingAddReview);
+        txtreviewinfo = findViewById(R.id.txtreviewinfo);
 
-        btnInstall = (Button) findViewById(R.id.btnInstall);
-        btnOpen = (Button) findViewById(R.id.btnOpen);
-        btnUninstall = (Button) findViewById(R.id.btnUninstall);
-        btnCancelDownload = (Button) findViewById(R.id.btnCancelDownload);
-        txtDownloadProgress = (TextView) findViewById(R.id.txtDownloadProgress);
-        progressDownload = (ProgressBar) findViewById(R.id.progressDownload);
-        downloadPanel = (LinearLayout) findViewById(R.id.downloadPanel);
-        installButtons = (LinearLayout) findViewById(R.id.installButtons);
+        btnInstall = findViewById(R.id.btnInstall);
+        btnOpen = findViewById(R.id.btnOpen);
+        btnUninstall = findViewById(R.id.btnUninstall);
+        btnCancelDownload = findViewById(R.id.btnCancelDownload);
+        txtDownloadProgress = findViewById(R.id.txtDownloadProgress);
+        progressDownload = findViewById(R.id.progressDownload);
+        downloadPanel = findViewById(R.id.downloadPanel);
+        installButtons = findViewById(R.id.installButtons);
 
         adapter = new ReviewAdapter();
         list.setAdapter(adapter);
@@ -264,16 +255,36 @@ public class AppDetailActivity extends Activity {
 //        });
 
         api = Api.getInstance(AppDetailActivity.this);
-
-        try {
-            int androidLogoRes = getResources().getIdentifier("market_android_logo", "drawable", getPackageName());
-            if (imgAndroidHeaderLogo != null && androidLogoRes != 0) imgAndroidHeaderLogo.setImageResource(androidLogoRes);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (!handleIntent(getIntent()) || appId == 0) {
+            finish();
+            return;
         }
+
         showLoading(true, getString(R.string.loading));
         showTab(0);
         loadDetails();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleIntent(intent);
+    }
+
+    private boolean handleIntent(Intent intent) {
+        Uri uri = intent.getData();
+        if (uri != null && Intent.ACTION_VIEW.equals(intent.getAction())) {
+            String packageName = uri.getLastPathSegment();
+            if (packageName == null) return false;
+
+            app = Database.getAppByPackage(this, packageName);
+            if (app == null) {
+                Toast.makeText(this, "App not found", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+            appId = app.id;
+        }
+        return true;
     }
 
     @Override
@@ -287,7 +298,11 @@ public class AppDetailActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        try { unregisterReceiver(dlReceiver); } catch (Exception e) { e.printStackTrace(); }
+        try {
+            unregisterReceiver(dlReceiver);
+        } catch (Exception e) {
+            Log.e("onPause@AppDetail", "Something went wrong: ", e);
+        }
     }
 
     private SharedPreferences downloadPrefs() {
@@ -360,16 +375,18 @@ public class AppDetailActivity extends Activity {
         return latest;
     }
 
+    @SuppressWarnings("deprecation")
     private void loadDetails() {
-        try { int androidLogoRes = getResources().getIdentifier("market_android_logo", "drawable", getPackageName()); if (imgAndroidHeaderLogo != null && androidLogoRes != 0) imgAndroidHeaderLogo.setImageResource(androidLogoRes); } catch (Exception e) { }
         showLoading(true, getString(R.string.loading));
         new LoadDetailsAsyncTask(this).execute();
     }
 
+    @SuppressWarnings("deprecation")
     public void loadScreenshots() {
         new LoadScreenshotsAsyncTask(this).execute();
     }
 
+    @SuppressWarnings("deprecation")
     public void loadReviews() {
         new LoadReviewsAsyncTask(this).execute();
     }
@@ -416,6 +433,7 @@ public class AppDetailActivity extends Activity {
                 .show();
     }
 
+    @SuppressWarnings("deprecation")
     private void sendReview(final String text, final int rating) {
         final int uid = Prefs.getUserId(this);
         final String token = Prefs.getAuthKey(this);
@@ -427,6 +445,7 @@ public class AppDetailActivity extends Activity {
         new SendReviewAsyncTask(this, token, uid, safeRating, text).execute();
     }
 
+    @SuppressWarnings("deprecation")
     private void showCommentsDialog(final int reviewId) {
         new ShowCommentsAsyncTask(this, reviewId).execute();
     }
@@ -446,6 +465,7 @@ public class AppDetailActivity extends Activity {
                 .show();
     }
 
+    @SuppressWarnings("deprecation")
     private void addReviewComment(final int reviewId, final String text) {
         final int uid = Prefs.getUserId(this);
         if (uid <= 0) {
@@ -455,6 +475,7 @@ public class AppDetailActivity extends Activity {
         new AddReviewCommentAsyncTask(this, reviewId, text, uid).execute();
     }
 
+    @SuppressWarnings("deprecation")
     private void sendReaction(final int reviewId, final int value) {
         final int uid = Prefs.getUserId(this);
         if (uid <= 0) {
@@ -464,6 +485,7 @@ public class AppDetailActivity extends Activity {
         new SendReactionAsyncTask(this, reviewId, value, uid).execute();
     }
 
+    @SuppressWarnings("deprecation")
     private void reportReview(final int reviewId) {
         final int uid = Prefs.getUserId(this);
         if (uid <= 0) {
@@ -477,7 +499,6 @@ public class AppDetailActivity extends Activity {
 
         // Create a background thread to handle the network operation
         new Thread(() -> {
-        String url1 = null;
         try {
             Log.d("AppDetailActivity", "Versions found: "+ app.versions.size());
             Log.d("AppDetailActivity", "Version requested: "+ version_id);
@@ -528,7 +549,7 @@ public class AppDetailActivity extends Activity {
         btnOpen.setVisibility(installed ? View.VISIBLE : GONE);
         btnUninstall.setText(getString(R.string.uninstall));
         btnUninstall.setVisibility(installed ? View.VISIBLE : GONE);
-        btnInstall.setText("Download");
+        btnInstall.setText(R.string.download_action);
         btnInstall.setEnabled(true);
     }
 
@@ -560,13 +581,17 @@ public class AppDetailActivity extends Activity {
         try {
             File f = new File(path);
             DownloadService.installApk(this, f);
-        } catch (Exception e) { }
+        } catch (Exception e) {
+            Log.e("openInstaller@AppDetail", "Failed to open the installer: ", e);
+        }
     }
 
     public void msg(String s) {
         try {
             new AlertDialog.Builder(this).setMessage(s).setPositiveButton("OK", null).show();
-        } catch (Exception e) { }
+        } catch (Exception e) {
+            Log.e("msg@AppDetail", "Failed to show message", e);
+        }
     }
 
     public void showLoading(boolean show, String text) {
@@ -590,7 +615,7 @@ public class AppDetailActivity extends Activity {
         layout.setPadding(pad, pad, pad, pad);
 
         Button btnProfile = new Button(this);
-        btnProfile.setText((isRu() ? "Профиль" : "Profile") + (r.userId > 0 ? "" : ""));
+        btnProfile.setText(R.string.profile_btn);
         layout.addView(btnProfile);
 
         final Button btnLike = new Button(this);

@@ -48,7 +48,27 @@
         <activity android:name=".ui.CategoryListActivity" />
         <activity android:name=".ui.CategoryAppsActivity" />
         <activity android:name=".ui.SettingsActivity" />
-        <activity android:name=".ui.AppDetailActivity" />
+        <activity android:name=".ui.AppDetailActivity"
+            android:exported="true" android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="konbini" />
+                <data android:host="app" />
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="konbini.lol" />
+                <data android:pathPrefix="/app" />
+            </intent-filter>
+        </activity>
         <service android:name="io.github.konbini.market.service.DownloadService" />
         <service android:name="io.github.konbini.market.service.UpdateCheckService" />
         <activity android:name=".ui.LoginActivity" />

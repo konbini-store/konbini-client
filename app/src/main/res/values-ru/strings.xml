@@ -40,11 +40,11 @@
     <string name="prev">Назад</string>
     <string name="next">Вперёд</string>
     <string name="server_instance">Инстанс сервера</string>
-    <string name="language">Язык</string>
+    <string name="language">Язык (Language)</string>
     <string name="apps_per_page">Приложений на страницу</string>
     <string name="save">Сохранить</string>
-    <string name="lang_en">Английский</string>
-    <string name="lang_ru">Русский</string>
+    <string name="lang_en">Английский (English)</string>
+    <string name="lang_ru">Русский (Russian)</string>
     <string name="all_categories">Все категории</string>
     <string name="category">Категория</string>
     <string name="featured_apps">Популярные приложения</string>
@@ -90,4 +90,8 @@
     <string name="post_review">Оставить отзыв</string>
     <string name="send_review">Отправить</string>
     <string name="cancel_review">Отмена</string>
+    <string name="download_action">Скачать</string>
+    <string name="profile_btn">Профиль</string>
+    <string name="like_btn">Лайк (%d)</string>
+    <string name="dislike_btn">Дизлайк (%d)</string>
 </resources>
