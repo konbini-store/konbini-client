@@ -227,8 +227,8 @@ public class Api {
     }
 
     public ArrayList<AppShort> getAuthorApps(Context context, String author) {
-        if (author == null || author.length() == 0) return this.getAllApps(context);
-        return filterApps(getAllApps(context), author, true);
+        if (author == null || author.length() == 0) return new ArrayList<>();
+        return Database.getAppsByAuthor(context, author);
     }
 
     public ArrayList<AppShort> getCategoryApps(Context context, String category) {
@@ -236,17 +236,7 @@ public class Api {
             Log.e("getCategoryApps@Api", "Category is null or empty, returning all apps");
             return this.getAllApps(context);
         }
-        return filterApps(getAllApps(context), category, false);
-    }
-
-    private ArrayList<AppShort> filterApps(ArrayList<AppShort> source, String value, boolean byAuthor) {
-        if (source == null) return null;
-        ArrayList<AppShort> filtered = new ArrayList<>();
-        for (AppShort app : source) {
-            String field = byAuthor ? app.author : app.categoryCode;
-            if (value.equals(field)) filtered.add(app);
-        }
-        return filtered;
+        return Database.getAppsByCategory(context, category);
     }
 
     public App getApp(Context context, final int app_id) {

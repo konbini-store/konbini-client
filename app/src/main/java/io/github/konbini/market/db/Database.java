@@ -170,6 +170,10 @@ public class Database {
         return getAppsBySelection(context, null, null);
     }
 
+    public static ArrayList<AppShort> getAppsByCategory(Context context, String categoryId) {
+        return getAppsBySelection(context, "category_code = ?", new String[]{categoryId});
+    }
+
     @SuppressLint("Range")
     public static ArrayList<AppShort> getAppsBySelection(Context context, String selection,
                                                          String[] selectionArgs) {
