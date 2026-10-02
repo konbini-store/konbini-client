@@ -3,6 +3,7 @@ package io.github.konbini.market.api;
 import android.os.Build;
 import android.util.Log;
 
+import org.apache.commons.logging.LogFactory;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -18,6 +19,7 @@ import java.util.List;
  */
 
 public class AppVersion {
+    private static final org.apache.commons.logging.Log log = LogFactory.getLog(AppVersion.class);
     public int id;
     public int versionCode;
     public String versionName;
@@ -34,8 +36,14 @@ public class AppVersion {
         this.size = obj.optInt("size", 0);
 
         JSONArray abis_json = obj.optJSONArray("abis");
-        for (int i = 0; i < abis_json.length(); i++) {
-            abis.add(abis_json.getString(i));
+        if (abis_json != null) {
+            for (int i = 0; i < abis_json.length(); i++) {
+                abis.add(abis_json.getString(i));
+            }
+        }
+        else {
+            Log.w("AppVersion", "abis_json is null!");
+            abis.clear();
         }
 
         this.downloadUrl = obj.optString("downloadUrl");

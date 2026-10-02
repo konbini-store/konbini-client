@@ -245,14 +245,20 @@ public class Api {
         Log.d("Api", url);
         final App[] app = new App[1];
         final boolean[] success = {false};
-        String cached = Prefs.readCache(context, url);
-        if (cached != null) {
+
+        if (Database.hasApp(context, app_id)) {
             try {
-                return new App(new JSONObject(cached));
+                app[0] = Database.getAppById(context, app_id);
+                if (app[0] != null && app[0].fullApp)
+                    return app[0];
+                else
+                    Log.w("Api", "Skipping short app");
             } catch (Exception e) {
                 Log.w("Api", "Ignoring invalid cached app response", e);
             }
         }
+
+        Log.w("Api", "No cache found.");
 
         client.get(url, new AsyncHttpResponseHandler() {
             @Override
@@ -264,6 +270,7 @@ public class Api {
                     Log.d("Api", "onSuccess: "+result);
                     Prefs.writeCache(context, url, result);
                     app[0] = new App(new JSONObject(result));
+                    Database.saveFullApp(context, app[0]);
                     success[0] = true;
                 } catch (Exception e) {
                     e.printStackTrace();

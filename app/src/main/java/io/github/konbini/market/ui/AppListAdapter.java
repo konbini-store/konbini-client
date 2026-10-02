@@ -54,12 +54,8 @@ public class AppListAdapter extends BaseAdapter {
         return v == null ? 0 : v.intValue();
     }
 
-    public int getCount() { Logger logger = Logger.getLogger(this.c.getPackageName());
-        logger.info(String.valueOf(items.size())); return items.size(); }
+    public int getCount() { return items.size(); }
     public Object getItem(int position) {
-//        Logger logger = Logger.getLogger(this.c.getPackageName());
-//        logger.info("Getting an item");
-//        logger.info(items.get(position).);
         return items.get(position);
     }
     public long getItemId(int position) { return items.get(position).id; }

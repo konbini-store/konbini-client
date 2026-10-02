@@ -54,6 +54,7 @@ public class Database {
         try {
             db.beginTransaction();
             try {
+                assert apps != null;
                 for (AppShort as : apps) {
                     ContentValues cv = new ContentValues();
                     cv.put("package_name", as.packageName);
@@ -82,7 +83,9 @@ public class Database {
         }
     }
 
-    public static void saveFullApp(SQLiteDatabase db, App app) {
+    public static void saveFullApp(Context context, App app) {
+        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(new File(context.getCacheDir(),
+                "cache.db"), null);
         db.beginTransaction();
         try {
             ContentValues cv = new ContentValues();
@@ -94,6 +97,7 @@ public class Database {
             cv.put("full_description", app.description);
 
             cv.put("screenshots", new JSONArray(app.screenshots).toString());
+            cv.put("featured", app.featured ? 1 : 0);
 
             JSONArray versionsArray = new JSONArray();
             for (int j = 0; j < app.versions.size(); j++) {
@@ -115,6 +119,7 @@ public class Database {
             e.printStackTrace();
         } finally {
             db.endTransaction();
+            db.close();
         }
     }
 
@@ -126,6 +131,9 @@ public class Database {
                     new String[]{packageName}, null, null, null);
             try {
                 if (cursor.moveToFirst()) {
+                    String versionsStr = cursor.getString(cursor.getColumnIndex("versions"));
+                    JSONArray versions = null;
+                    if (versionsStr != null) versions = new JSONArray(versionsStr);
                     return new App(
                             cursor.getInt(cursor.getColumnIndex("id")),
                             cursor.getString(cursor.getColumnIndex("name")),
@@ -134,7 +142,42 @@ public class Database {
                             cursor.getString(cursor.getColumnIndex("full_description")),
                             cursor.getString(cursor.getColumnIndex("icon")),
                             new JSONArray(cursor.getString(cursor.getColumnIndex("screenshots"))),
-                            new JSONArray(cursor.getString(cursor.getColumnIndex("versions")))
+                            versions,
+                            cursor.getInt(cursor.getColumnIndex("featured")) != 0
+                    );
+                }
+            } finally {
+                cursor.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            db.close();
+        }
+        return null;
+    }
+
+    @SuppressLint("Range")
+    public static App getAppById(Context context, int appId) {
+        SQLiteDatabase db = getDatabase(context);
+        try {
+            Cursor cursor = db.query("apps", null, "id = ?",
+                    new String[]{String.valueOf(appId)}, null, null, null);
+            try {
+                if (cursor.moveToFirst()) {
+                    String versionsStr = cursor.getString(cursor.getColumnIndex("versions"));
+                    JSONArray versions = null;
+                    if (versionsStr != null) versions = new JSONArray(versionsStr);
+                    return new App(
+                            cursor.getInt(cursor.getColumnIndex("id")),
+                            cursor.getString(cursor.getColumnIndex("name")),
+                            cursor.getString(cursor.getColumnIndex("author")),
+                            cursor.getString(cursor.getColumnIndex("package_name")),
+                            cursor.getString(cursor.getColumnIndex("full_description")),
+                            cursor.getString(cursor.getColumnIndex("icon")),
+                            new JSONArray(cursor.getString(cursor.getColumnIndex("screenshots"))),
+                            versions,
+                            cursor.getInt(cursor.getColumnIndex("featured")) != 0
                     );
                 }
             } finally {
@@ -157,7 +200,11 @@ public class Database {
     public static ArrayList<AppShort> getFeaturedApps(Context context) {
         String selection = "featured != 0";
         Log.d("Database", "getFeaturedApps called");
-        return getAppsBySelection(context, selection, null);
+        ArrayList<AppShort> result = getAppsBySelection(context, selection, null);
+        ArrayList<AppShort> allApps = getAllApps(context);
+
+        Log.e("Database", result != null ? result.toString() : "null");
+        return result;
     }
 
     public static ArrayList<AppShort> getAppsByAuthor(Context context, String author) {
@@ -174,13 +221,18 @@ public class Database {
         return getAppsBySelection(context, "category_code = ?", new String[]{categoryId});
     }
 
-    @SuppressLint("Range")
     public static ArrayList<AppShort> getAppsBySelection(Context context, String selection,
                                                          String[] selectionArgs) {
+        return getAppsBySelection(context, selection, selectionArgs, "id ASC");
+    }
+
+    @SuppressLint("Range")
+    public static ArrayList<AppShort> getAppsBySelection(Context context, String selection,
+                                                         String[] selectionArgs, String orderBy) {
         ArrayList<AppShort> results = new ArrayList<>();
         SQLiteDatabase db = getDatabase(context);
         try {
-            Cursor cursor = db.query("apps", null, selection, selectionArgs, null, null, null);
+            Cursor cursor = db.query("apps", null, selection, selectionArgs, null, null, orderBy);
             try {
                 Log.d("Database", "getAppsBySelection selection: " + selection + ", count: " + cursor.getCount());
                 if (!cursor.moveToFirst()) {
@@ -193,6 +245,14 @@ public class Database {
                     String[] abis_array = abis_string != null ? abis_string.split(",") : new String[0];
                     ArrayList<String> abis = new ArrayList<>(Arrays.asList(abis_array));
 
+                    String description = cursor.getString(cursor.getColumnIndex("short_description"));
+                    if (description == null) {
+                        description = cursor.getString(cursor.getColumnIndex("full_description"));
+                    }
+                    if (description == null) {
+                        description = "No description provided.";
+                    }
+
                     results.add(new AppShort(
                             cursor.getInt(cursor.getColumnIndex("id")),
                             cursor.getString(cursor.getColumnIndex("name")),
@@ -201,7 +261,7 @@ public class Database {
                             cursor.getString(cursor.getColumnIndex("category_label")),
                             cursor.getString(cursor.getColumnIndex("icon")),
                             abis,
-                            cursor.getString(cursor.getColumnIndex("short_description")),
+                            description,
                             cursor.getString(cursor.getColumnIndex("author")),
                             cursor.getString(cursor.getColumnIndex("package_name")),
                             cursor.getInt(cursor.getColumnIndex("featured")) != 0
@@ -244,6 +304,23 @@ public class Database {
         SQLiteDatabase db = getDatabase(context);
         try {
             Cursor cursor = db.rawQuery("SELECT 1 FROM apps WHERE package_name = ?", new String[]{packageName});
+            try {
+                return cursor.moveToFirst();
+            } finally {
+                cursor.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            db.close();
+        }
+        return false;
+    }
+
+    public static boolean hasApp(Context context, int appId) {
+        SQLiteDatabase db = getDatabase(context);
+        try {
+            Cursor cursor = db.rawQuery("SELECT 1 FROM apps WHERE id = ?", new String[]{String.valueOf(appId)});
             try {
                 return cursor.moveToFirst();
             } finally {

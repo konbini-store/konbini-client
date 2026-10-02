@@ -23,6 +23,8 @@ public class App {
     public String description = "";
     public SparseArray<AppVersion> versions = new SparseArray<AppVersion>();
     public String categoryId = "";
+    public boolean fullApp;
+    public boolean featured;
 //    public ArrayList<Review> reviews;
 
     public App(JSONObject obj) throws JSONException {
@@ -47,35 +49,43 @@ public class App {
         }
 
         this.categoryId = obj.getString("categoryId");
+        this.featured = obj.optBoolean("featured");
+        this.fullApp = true;
     }
 
     public App(int id, String name, String author, String packageId, String description,
-               String icon, JSONArray screenshots, JSONArray versions) {
+               String icon, JSONArray screenshots, JSONArray versions, boolean featured) {
         this.id = id;
         this.name = name;
         this.author = author;
         this.packageId = packageId;
         this.description = description;
         this.icon = icon;
+        this.fullApp = (screenshots != null && versions != null && description != null);
+        this.featured = featured;
 
-        ArrayList<String> screenshots_converted = new ArrayList<>();
-        for (int i = 0; i < screenshots.length(); i++) {
-            String temp;
-            try { temp = screenshots.getString(i); }
-            catch (Exception ignored) { continue; }
-            screenshots_converted.add(temp);
-        }
-        this.screenshots = screenshots_converted;
-
-        for (int i = 0; i < versions.length(); i++) {
-            Log.d("App", "App version: "+versions.optJSONObject(i));
-            AppVersion version;
-            try {
-                version = new AppVersion(versions.optJSONObject(i));
-            } catch (JSONException e) {
-                continue;
+        if (screenshots != null) {
+            ArrayList<String> screenshots_converted = new ArrayList<>();
+            for (int i = 0; i < screenshots.length(); i++) {
+                String temp;
+                try { temp = screenshots.getString(i); }
+                catch (Exception ignored) { continue; }
+                screenshots_converted.add(temp);
             }
-            this.versions.append(version.id, version);
+            this.screenshots = screenshots_converted;
+        }
+
+        if (versions != null) {
+            for (int i = 0; i < versions.length(); i++) {
+                Log.d("App", "App version: "+versions.optJSONObject(i));
+                AppVersion version;
+                try {
+                    version = new AppVersion(versions.optJSONObject(i));
+                } catch (JSONException e) {
+                    continue;
+                }
+                this.versions.append(version.id, version);
+            }
         }
     }
 

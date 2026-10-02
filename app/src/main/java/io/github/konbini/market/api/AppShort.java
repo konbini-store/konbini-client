@@ -33,37 +33,43 @@ public class AppShort {
     public double rating = 0;
     public String packageName = "";
 
-    public AppShort(JSONObject obj) throws JSONException {
-        this.id = obj.getInt("id");
-        Log.d("AppShort@36", String.valueOf(this.id));
-        this.name = obj.optString("name");
-        this.api = obj.optInt("api");
-        this.categoryCode = obj.optString("categoryCode", "other_apps");
-        this.categoryLabel = obj.optString("categoryLabel", "Other apps");
-        this.icon = obj.optString("icon", "");
-        JSONArray abis_json = obj.optJSONArray("abis");
-        for (int i = 0; i < Objects.requireNonNull(abis_json).length(); i++) {
-            abis.add(abis_json.optString(i));
-        }
-        this.description = obj.optString("description", "No description provided.");
-        this.is_game = obj.optBoolean("isGame", false);
-        this.author = obj.optString("author", "Unknown");
-        this.downloads = obj.optInt("downloads", 0);
-        this.rating = obj.optDouble("rating", 0.0);
-        this.packageName = obj.getString("packageName");
+    public AppShort(JSONObject obj) throws Exception {
+        try {
+            this.id = obj.getInt("id");
+            this.name = obj.optString("name");
+            this.api = obj.optInt("api");
+            this.categoryCode = obj.optString("categoryCode", "other_apps");
+            this.categoryLabel = obj.optString("categoryLabel", "Other apps");
+            this.icon = obj.optString("icon", "");
 
-        Object featuredObj = obj.opt("featured");
-        if (featuredObj instanceof Boolean) {
-            this.featured = (Boolean) featuredObj;
-        } else if (featuredObj instanceof Number) {
-            this.featured = ((Number) featuredObj).intValue() != 0;
-        } else if (featuredObj instanceof String) {
-            String s = (String) featuredObj;
-            this.featured = Boolean.parseBoolean(s) || "1".equals(s);
-        } else {
-            this.featured = obj.optBoolean("featured", false);
+            JSONArray abis_json = obj.optJSONArray("abis");
+            for (int i = 0; i < Objects.requireNonNull(abis_json).length(); i++) {
+                abis.add(abis_json.optString(i));
+            }
+
+            this.description = obj.optString("description", "No description provided.");
+            this.is_game = obj.optBoolean("isGame", false);
+            this.author = obj.optString("author", "Unknown");
+            this.downloads = obj.optInt("downloads", 0);
+            this.rating = obj.optDouble("rating", 0.0);
+            this.packageName = obj.getString("packageName");
+
+            Object featuredObj = obj.opt("featured");
+            if (featuredObj instanceof Boolean) {
+                this.featured = (Boolean) featuredObj;
+            } else if (featuredObj instanceof Number) {
+                this.featured = ((Number) featuredObj).intValue() != 0;
+            } else if (featuredObj instanceof String) {
+                String s = (String) featuredObj;
+                this.featured = Boolean.parseBoolean(s) || "1".equals(s);
+            } else {
+                this.featured = obj.optBoolean("featured", false);
+            }
+            Log.d("AppShort", "App " + this.packageName + " featuredObj: " + featuredObj + " -> parsed featured: " + this.featured);
+        } catch (Exception e) {
+            Log.e("AppShort", e.toString());
+            throw e;
         }
-        Log.d("AppShort", "App " + this.packageName + " featuredObj: " + featuredObj + " -> parsed featured: " + this.featured);
     }
 
     public AppShort(int id, String name, int api, String categoryCode, String categoryLabel,
