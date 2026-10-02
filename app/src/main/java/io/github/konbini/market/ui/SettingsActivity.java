@@ -1,6 +1,7 @@
 package io.github.konbini.market.ui;
 
 import io.github.konbini.market.R;
+import io.github.konbini.market.db.Database;
 import io.github.konbini.market.util.LocaleHelper;
 import io.github.konbini.market.util.Prefs;
 
@@ -99,12 +100,10 @@ public class SettingsActivity extends Activity {
             }
         });
 
-        clearCacheButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Prefs.clearCache(SettingsActivity.this);
-                Toast.makeText(SettingsActivity.this, "Cache cleared", Toast.LENGTH_SHORT).show();
-            }
+        clearCacheButton.setOnClickListener(v -> {
+            Prefs.clearCache(SettingsActivity.this);
+            Database.clearCache(SettingsActivity.this);
+            Toast.makeText(SettingsActivity.this, "Cache cleared", Toast.LENGTH_SHORT).show();
         });
     }
 

@@ -1,6 +1,5 @@
 package io.github.konbini.market.api;
 
-import android.os.Build;
 import android.util.Log;
 import android.util.SparseArray;
 
@@ -9,7 +8,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
  * Created by paul on 14/07/26.
@@ -18,7 +16,7 @@ import java.util.HashMap;
 public class App {
     public int id;
     public String name;
-    public String author = "";
+    public String author;
     public String packageId;
     public String icon;
     public ArrayList<String> screenshots = new ArrayList<>();
@@ -49,6 +47,36 @@ public class App {
         }
 
         this.categoryId = obj.getString("categoryId");
+    }
+
+    public App(int id, String name, String author, String packageId, String description,
+               String icon, JSONArray screenshots, JSONArray versions) {
+        this.id = id;
+        this.name = name;
+        this.author = author;
+        this.packageId = packageId;
+        this.description = description;
+        this.icon = icon;
+
+        ArrayList<String> screenshots_converted = new ArrayList<>();
+        for (int i = 0; i < screenshots.length(); i++) {
+            String temp;
+            try { temp = screenshots.getString(i); }
+            catch (Exception ignored) { continue; }
+            screenshots_converted.add(temp);
+        }
+        this.screenshots = screenshots_converted;
+
+        for (int i = 0; i < versions.length(); i++) {
+            Log.d("App", "App version: "+versions.optJSONObject(i));
+            AppVersion version;
+            try {
+                version = new AppVersion(versions.optJSONObject(i));
+            } catch (JSONException e) {
+                continue;
+            }
+            this.versions.append(version.id, version);
+        }
     }
 
     public AppVersion getFirstVersion() {

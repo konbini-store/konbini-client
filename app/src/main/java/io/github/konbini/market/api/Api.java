@@ -1,7 +1,6 @@
 package io.github.konbini.market.api;
 
 import android.content.Context;
-import android.os.Build;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -9,6 +8,8 @@ import org.json.JSONObject;
 
 import com.loopj.android.http.*;
 
+import cz.msebera.android.httpclient.Header;
+import io.github.konbini.market.db.Database;
 import io.github.konbini.market.ui.ServerMetadata;
 import io.github.konbini.market.util.Prefs;
 
@@ -27,6 +28,7 @@ public class Api {
     private long memoryAppsAt;
     private ArrayList<AppShort> memoryFeaturedApps;
     private long memoryFeaturedAppsAt;
+    private boolean attemptedFeaturedRefresh = false;
 
 
     private static Api instance;
@@ -54,7 +56,7 @@ public class Api {
 
         client.get(url, new AsyncHttpResponseHandler() {
             @Override
-            public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("fetchServerMetadata@Api", String.format(Locale.ENGLISH, "Got %d status code, yay!", statusCode));
                 try {
                     String result = new String(responseBody, "UTF-8");
@@ -74,7 +76,7 @@ public class Api {
             }
 
             @Override
-            public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.e("Api", String.format(Locale.ENGLISH, "Got %d status code... :( (line 199)", statusCode));
                 Log.w("Api", "Failed to fetch server metadata");
             }
@@ -98,47 +100,20 @@ public class Api {
     }
 
     // Get featured apps
+    // Isn't exactly great on memory...
     public ArrayList<AppShort> getFeaturedApps(Context context) {
-        final String url = base_url + "/api/featured.json";
-        final ArrayList<AppShort> apps = new ArrayList<>();
-        final boolean[] success = {false};
-        if (memoryFeaturedApps != null &&
-                System.currentTimeMillis() - memoryFeaturedAppsAt <= CACHE_TTL_MS) {
-            return new ArrayList<>(memoryFeaturedApps);
+        Log.d("Api", "getFeaturedApps called");
+        ArrayList<AppShort> featured = Database.getFeaturedApps(context);
+        if ((featured == null || featured.isEmpty()) && !attemptedFeaturedRefresh) {
+            attemptedFeaturedRefresh = true;
+            Log.d("Api", "No featured apps found in cache. Clearing stale cache and re-fetching once...");
+            Database.clearCache(context);
+            memoryApps = null;
+            getAllApps(context);
+            featured = Database.getFeaturedApps(context);
         }
-
-        String cached = Prefs.readCache(context, url);
-        if (cached != null && parseApps(cached, apps)) {
-            rememberFeaturedApps(apps);
-            Log.d("getFeaturedApps@Api", "Using cached response");
-            return apps;
-        }
-
-        Log.d("getFeaturedApps@Api", "No cache found.");
-
-        client.get(url, new AsyncHttpResponseHandler() {
-            @Override
-            public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
-                Log.i("Api", String.format(Locale.ENGLISH, "Got %d status code, yay!", statusCode));
-                String result;
-                try {
-                    result = new String(responseBody, "UTF-8");
-                    Log.d("Api", "onSuccess: "+result);
-                    Prefs.writeCache(context, url, result);
-                    success[0] = parseApps(result, apps);
-                    if (success[0]) rememberFeaturedApps(apps);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-
-            @Override
-            public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
-                Log.e("Api", String.format(Locale.ENGLISH, "Got %d status code... :(", statusCode));
-            }
-        });
-
-        return success[0] ? apps : null;
+        Log.d("Api", "Database.getFeaturedApps returned size: " + (featured != null ? featured.size() : "null"));
+        return featured;
     }
 
     public ArrayList<AppShort> getAllApps(Context context) {
@@ -149,8 +124,8 @@ public class Api {
             return new ArrayList<>(memoryApps);
         }
 
-        String cached = Prefs.readCache(context, url);
-        if (cached != null && parseApps(cached, apps)) {
+        if (Database.hasApps(context)) {
+            apps.addAll(Database.getAllApps(context));
             rememberApps(apps);
             Log.d("getAllApps@Api", "Using cached response");
             return apps;
@@ -160,22 +135,24 @@ public class Api {
 
         client.get(url, new AsyncHttpResponseHandler() {
             @Override
-            public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Api", String.format(Locale.ENGLISH, "Got %d status code, yay!", statusCode));
                 String result;
                 try {
                     result = new String(responseBody, "UTF-8");
                     Log.d("Api", "onSuccess: "+result);
-                    Prefs.writeCache(context, url, result);
                     success[0] = parseApps(result, apps);
-                    if (success[0]) rememberApps(apps);
+                    if (success[0]) {
+                        rememberApps(apps);
+                        Database.saveApps(context, apps);
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
 
             @Override
-            public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.e("Api", String.format(Locale.ENGLISH, "Got %d status code... :(", statusCode));
             }
         });
@@ -184,19 +161,8 @@ public class Api {
     }
 
     public ArrayList<AppShort> searchApps(Context context, String query) {
-        ArrayList<AppShort> source = getAllApps(context);
-        if (source == null) return null;
-
-        String normalizedQuery = query == null ? "" : query.trim().toLowerCase(Locale.US);
-        ArrayList<AppShort> matches = new ArrayList<>();
-        for (AppShort app : source) {
-            String name = app.name == null ? "" : app.name.toLowerCase(Locale.US);
-            String packageName = app.packageName == null ? "" : app.packageName.toLowerCase(Locale.US);
-            if (name.contains(normalizedQuery) || packageName.contains(normalizedQuery)) {
-                matches.add(app);
-            }
-        }
-        return matches;
+        if (!Database.hasApps(context)) getAllApps(context);
+        return Database.searchApps(context, query);
     }
 
     private void rememberApps(ArrayList<AppShort> apps) {
@@ -242,7 +208,7 @@ public class Api {
         final JSONArray[] categories = new JSONArray[1];
         client.get(url, new AsyncHttpResponseHandler() {
             @Override
-            public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {
                     String result = new String(responseBody, "UTF-8");
                     categories[0] = new JSONArray(result);
@@ -253,7 +219,7 @@ public class Api {
             }
 
             @Override
-            public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.e("Api", "Failed to fetch categories", error);
             }
         });
@@ -300,7 +266,7 @@ public class Api {
 
         client.get(url, new AsyncHttpResponseHandler() {
             @Override
-            public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Api", String.format(Locale.ENGLISH, "Got %d status code, yay!", statusCode));
                 String result;
                 try {
@@ -315,7 +281,7 @@ public class Api {
             }
 
             @Override
-            public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.e("Api", String.format(Locale.ENGLISH, "Got %d status code... :( (line 199)", statusCode));
             }
         });

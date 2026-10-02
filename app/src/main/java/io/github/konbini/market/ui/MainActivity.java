@@ -173,6 +173,7 @@ public class MainActivity extends Activity {
             ImageView iw = (ImageView) findViewById(R.id.imgAndroidWord);
             if (iw != null && androidLogoRes != 0) iw.setImageResource(androidLogoRes);
         } catch (Exception e) { }
+        getDatabase(this);
         if (!restoreFromCache()) {
             loadTopContent();
         }
