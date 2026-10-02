@@ -1,5 +1,7 @@
 package io.github.konbini.market.ui;
 
+import static io.github.konbini.market.db.Database.getDatabase;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,13 +43,11 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -116,8 +116,6 @@ public class MainActivity extends Activity {
 
         this.api = Api.getInstance(this);
 
-        this.supportedAbis = this.api.getSupportedAbis();
-
         try {
             Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/storopia.ttf");
             txtMarket.setTypeface(tf);
@@ -127,50 +125,36 @@ public class MainActivity extends Activity {
         adapter = new AppListAdapter(this, items);
         list.setAdapter(adapter);
 
-        list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                int idx = position - list.getHeaderViewsCount();
-                if (idx < 0 || idx >= items.size()) return;
-                AppShort it = items.get(idx);
-                Intent i = new Intent(MainActivity.this, AppDetailActivity.class);
-                Log.d("MainActivity@134", String.valueOf(it.id));
-                i.putExtra("app_id", it.id);
-                startActivity(i);
-            }
+        list.setOnItemClickListener((parent, view, position, id) -> {
+            int idx = position - list.getHeaderViewsCount();
+            if (idx < 0 || idx >= items.size()) return;
+            AppShort it = items.get(idx);
+            Intent i = new Intent(MainActivity.this, AppDetailActivity.class);
+            Log.d("MainActivity@134", String.valueOf(it.id));
+            i.putExtra("app_id", it.id);
+            startActivity(i);
         });
 
-        btnSearch.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { startActivity(new Intent(MainActivity.this, SearchActivity.class)); }
+        btnSearch.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, SearchActivity.class)));
+        btnApps.setOnClickListener(v -> openCategories(false));
+        btnGames.setOnClickListener(v -> openCategories(true));
+        btnDownloads.setOnClickListener(v -> openDownloads());
+        logo.setOnClickListener(v -> {
+            try { openOptionsMenu(); } catch (Exception e) { }
         });
-        btnApps.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { openCategories(false); }
-        });
-        btnGames.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { openCategories(true); }
-        });
-        btnDownloads.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { openDownloads(); }
-        });
-        logo.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                try { openOptionsMenu(); } catch (Exception e) { }
-            }
-        });
-        promoMainRoot.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (currentPromoCategory == null) return;
-                Intent i = new Intent(MainActivity.this, CategoryAppsActivity.class);
-                i.putExtra("category", currentPromoCategory.code);
-                i.putExtra("title", currentPromoCategory.label);
-                i.putExtra("is_game", currentPromoCategory.isGame);
-                startActivity(i);
-            }
+        promoMainRoot.setOnClickListener(v -> {
+            if (currentPromoCategory == null) return;
+            Intent i = new Intent(MainActivity.this, CategoryAppsActivity.class);
+            i.putExtra("category", currentPromoCategory.code);
+            i.putExtra("title", currentPromoCategory.label);
+            i.putExtra("is_game", currentPromoCategory.isGame);
+            startActivity(i);
         });
 
         txtMarket.setText(isRu() ? "маркет" : "market");
         try {
-            int androidLogoRes = getResources().getIdentifier("market_android_logo", "drawable", getPackageName());
-            ImageView iw = (ImageView) findViewById(R.id.imgAndroidWord);
+            int androidLogoRes = R.drawable.market_android_logo;
+            ImageView iw = findViewById(R.id.imgAndroidWord);
             if (iw != null && androidLogoRes != 0) iw.setImageResource(androidLogoRes);
         } catch (Exception e) { }
         getDatabase(this);
@@ -194,27 +178,6 @@ public class MainActivity extends Activity {
 //        }
 //        return false;
 //    }
-
-    public String baseUrl() {
-        String host = Prefs.getServer(this).trim();
-
-        if (host.length() == 0) host = "pyt.pp.ua";
-
-        while (host.endsWith("/")) host = host.substring(0, host.length() - 1);
-
-        if (host.endsWith("/api")) host = host.substring(0, host.length() - 4);
-        while (host.endsWith("/")) host = host.substring(0, host.length() - 1);
-
-        if (host.startsWith("http://") || host.startsWith("https://")) {
-            return host;
-        }
-
-        return "http://" + host;
-    }
-
-    public String getSupportedAbis() {
-        return this.supportedAbis;
-    }
 
     private boolean isRu() {
 //        String lang = java.util.Locale.getDefault().getLanguage();
@@ -316,9 +279,9 @@ public class MainActivity extends Activity {
             if (activity == null) return new ArrayList<>();
             ArrayList<AppShort> apps = api.getFeaturedApps(activity);
             if (apps != null)
-                Log.i("MainActivity", "App size::: "+String.valueOf(apps.size()));
+                Log.i("MainActivity", "App size::: "+apps.size());
 
-            return (apps != null) ? apps : new ArrayList<AppShort>();
+            return (apps != null) ? apps : new ArrayList<>();
         }
 
         protected void onPostExecute(ArrayList<AppShort> out) {
@@ -604,13 +567,11 @@ public class MainActivity extends Activity {
     }
 
     private void showApi25WarningIfNeeded() {
-        if (Build.VERSION.SDK_INT == 25) {
+        if (Build.VERSION.SDK_INT >= 25) {
             new AlertDialog.Builder(this)
                     .setTitle("Warning")
-                    .setMessage("OldMarket can work badly on newer devices.")
-                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) { }
-                    })
+                    .setMessage("Konbini can work badly on newer devices.")
+                    .setPositiveButton("OK", (dialog, which) -> { })
                     .show();
         }
     }
