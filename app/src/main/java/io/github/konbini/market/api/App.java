@@ -20,9 +20,9 @@ public class App {
     public String packageId;
     public String icon;
     public ArrayList<String> screenshots = new ArrayList<>();
-    public String description = "";
-    public SparseArray<AppVersion> versions = new SparseArray<AppVersion>();
-    public String categoryId = "";
+    public String description;
+    public SparseArray<AppVersion> versions = new SparseArray<>();
+    public String categoryId;
     public boolean fullApp;
     public boolean featured;
 //    public ArrayList<Review> reviews;
@@ -35,17 +35,22 @@ public class App {
         this.description = obj.optString("description");
 
         JSONArray versions = obj.optJSONArray("versions");
-        Log.d("App", "App versions: "+versions.toString());
-        for (int i = 0; i < versions.length(); i++) {
-            Log.d("App", "App version: "+versions.optJSONObject(i));
-            AppVersion version = new AppVersion(versions.optJSONObject(i));
-            this.versions.append(version.id, version);
+        if (versions != null) {
+            Log.d("App", "App versions: "+ versions);
+            for (int i = 0; i < versions.length(); i++) {
+                Log.d("App", "App version: "+versions.optJSONObject(i));
+                AppVersion version = new AppVersion(versions.optJSONObject(i));
+                this.versions.append(version.id, version);
+            }
         }
 
         this.icon = obj.optString("icon");
+
         JSONArray screenshots = obj.optJSONArray("screenshots");
-        for (int i = 0; i < screenshots.length(); i++) {
-            this.screenshots.add(screenshots.getString(i));
+        if (screenshots != null) {
+            for (int i = 0; i < screenshots.length(); i++) {
+                this.screenshots.add(screenshots.getString(i));
+            }
         }
 
         this.categoryId = obj.getString("categoryId");
@@ -114,7 +119,7 @@ public class App {
     }
 
     public SparseArray<AppVersion> supportedVersions() {
-        Log.d("App", "Versions found:"+String.valueOf(versions.size()));
+        Log.d("App", "Versions found:"+ versions.size());
         SparseArray<AppVersion> result = new SparseArray<>();
 
         for (int j = 0; j < versions.size(); j++) {

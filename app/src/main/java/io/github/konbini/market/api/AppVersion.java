@@ -3,14 +3,12 @@ package io.github.konbini.market.api;
 import android.os.Build;
 import android.util.Log;
 
-import org.apache.commons.logging.LogFactory;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -19,7 +17,6 @@ import java.util.List;
  */
 
 public class AppVersion {
-    private static final org.apache.commons.logging.Log log = LogFactory.getLog(AppVersion.class);
     public int id;
     public int versionCode;
     public String versionName;
@@ -49,6 +46,7 @@ public class AppVersion {
         this.downloadUrl = obj.optString("downloadUrl");
     }
 
+    @SuppressWarnings("deprecation")
     public boolean isSupported() {
         if (minSdk > Build.VERSION.SDK_INT) {
             Log.e("AppVersion", "REJECTED on minSdk -> App requires API: " + minSdk + ", Device is API: " + Build.VERSION.SDK_INT);
@@ -57,8 +55,16 @@ public class AppVersion {
 
         if (this.abis.isEmpty()) return true; // noarch apks that don't have any libraries
 
-        List<String> abis = Arrays.asList((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                ? Build.SUPPORTED_ABIS : new String[]{Build.CPU_ABI, Build.CPU_ABI2});
+        List<String> abis;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            abis = Arrays.asList(Build.SUPPORTED_ABIS);
+        }
+        else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.FROYO) {
+            abis = Arrays.asList(Build.CPU_ABI, Build.CPU_ABI2);
+        }
+        else {
+            abis = Collections.singletonList(Build.CPU_ABI);
+        }
 
         boolean hasMatchingAbi = !Collections.disjoint(this.abis, abis);
 

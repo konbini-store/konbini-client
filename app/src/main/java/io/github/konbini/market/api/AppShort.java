@@ -4,7 +4,6 @@ import android.os.Build;
 import android.util.Log;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -18,20 +17,20 @@ import java.util.Objects;
  */
 
 public class AppShort {
-    public int id = 0;
+    public int id;
     public String name;
-    public int api = 0;
-    public boolean featured = false;
-    public String categoryCode = "";
-    public String categoryLabel = "";
-    public String icon = "";
-    public String author = "";
-    public String description = "";
+    public int api;
+    public boolean featured;
+    public String categoryCode;
+    public String categoryLabel;
+    public String icon;
+    public String author;
+    public String description;
     public boolean is_game = false;
     public ArrayList<String> abis = new ArrayList<>();
     public int downloads = 0;
     public double rating = 0;
-    public String packageName = "";
+    public String packageName;
 
     public AppShort(JSONObject obj) throws Exception {
         try {
@@ -88,6 +87,7 @@ public class AppShort {
         this.featured = featured;
     }
 
+    @SuppressWarnings("deprecation")
     boolean isSupported() {
         if (this.api > Build.VERSION.SDK_INT) {
             Log.e("AppVersion", "REJECTED on minSdk -> App requires API: " + this.api + ", Device is API: " + Build.VERSION.SDK_INT);
@@ -96,9 +96,16 @@ public class AppShort {
 
         if (this.abis.isEmpty()) return true; // noarch apks that don't have any libraries
 
-        List<String> abis = Arrays.asList((Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                ? Build.SUPPORTED_ABIS : new String[]{Build.CPU_ABI,
-                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.FROYO) ? Build.CPU_ABI2 : "none"});
+        List<String> abis;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            abis = Arrays.asList(Build.SUPPORTED_ABIS);
+        }
+        else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.FROYO) {
+            abis = Arrays.asList(Build.CPU_ABI, Build.CPU_ABI2);
+        }
+        else {
+            abis = Collections.singletonList(Build.CPU_ABI);
+        }
 
         boolean hasMatchingAbi = !Collections.disjoint(this.abis, abis);
 

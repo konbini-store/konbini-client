@@ -1,6 +1,7 @@
 package io.github.konbini.market.api;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -26,8 +27,6 @@ public class Api {
     private String base_url = default_base_url;
     private ArrayList<AppShort> memoryApps;
     private long memoryAppsAt;
-    private ArrayList<AppShort> memoryFeaturedApps;
-    private long memoryFeaturedAppsAt;
     private boolean attemptedFeaturedRefresh = false;
 
 
@@ -48,6 +47,7 @@ public class Api {
         fetchServerMetadata(context);
     }
 
+    @SuppressWarnings("CharsetObjectCanBeUsed")
     private void fetchServerMetadata(Context context) {
         AsyncHttpClient client = new AsyncHttpClient();
         String url = String.format(Locale.ENGLISH, "%s/api/meta.json", this.base_url);
@@ -71,7 +71,7 @@ public class Api {
                         Prefs.clearCache(context);
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Log.e("fetchServerMetadata@Api", "Something went wrong", e);
                 }
             }
 
@@ -92,7 +92,7 @@ public class Api {
 
     public static synchronized Api getInstance(Context context) {
         String url = Prefs.getServer(context);
-        return getInstance(context, url.equals("") ? default_base_url : url);
+        return getInstance(context, TextUtils.isEmpty(url) ? default_base_url : url);
     }
 
     public String getBaseUrl() {
@@ -116,6 +116,7 @@ public class Api {
         return featured;
     }
 
+    @SuppressWarnings("CharsetObjectCanBeUsed")
     public ArrayList<AppShort> getAllApps(Context context) {
         final String url = base_url + "/api/apps.json";
         final ArrayList<AppShort> apps = new ArrayList<>();
@@ -147,7 +148,7 @@ public class Api {
                         Database.saveApps(context, apps);
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Log.e("getAllApps@Api", "Something went wrong: ", e);
                 }
             }
 
@@ -170,11 +171,6 @@ public class Api {
         memoryAppsAt = System.currentTimeMillis();
     }
 
-    private void rememberFeaturedApps(ArrayList<AppShort> apps) {
-        memoryFeaturedApps = new ArrayList<>(apps);
-        memoryFeaturedAppsAt = System.currentTimeMillis();
-    }
-
     private boolean parseApps(String result, ArrayList<AppShort> apps) {
         try {
             JSONArray array = new JSONArray(result);
@@ -188,6 +184,7 @@ public class Api {
         }
     }
 
+    @SuppressWarnings("CharsetObjectCanBeUsed")
     public JSONArray getCategories(Context context, boolean isGame) {
         final String url = base_url + (isGame
                 ? "/api/categories/games.json"
@@ -239,6 +236,7 @@ public class Api {
         return Database.getAppsByCategory(context, category);
     }
 
+    @SuppressWarnings("CharsetObjectCanBeUsed")
     public App getApp(Context context, final int app_id) {
         final String url = String.format(Locale.ENGLISH, "%s/api/apps/%d.json", base_url, app_id);
         Log.d("Api", "line 178");
@@ -273,7 +271,7 @@ public class Api {
                     Database.saveFullApp(context, app[0]);
                     success[0] = true;
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Log.e("getApp@Api", "Something went wrong: ", e);
                 }
             }
 
