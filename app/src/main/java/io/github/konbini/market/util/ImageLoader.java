@@ -12,6 +12,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 
 // safer loader for old Android / low RAM devices
 public class ImageLoader {
@@ -19,8 +20,8 @@ public class ImageLoader {
     private static final int MAX_MEM_ITEMS = 40;
 
     private static final LinkedHashMap<String, Bitmap> mem =
-            new LinkedHashMap<String, Bitmap>(MAX_MEM_ITEMS, 0.75f, true) {
-                protected boolean removeEldestEntry(Map.Entry<String, Bitmap> eldest) {
+            new LinkedHashMap<>(MAX_MEM_ITEMS, 0.75f, true) {
+                protected boolean removeEldestEntry(Entry<String, Bitmap> eldest) {
                     return size() > MAX_MEM_ITEMS;
                 }
             };
@@ -236,5 +237,99 @@ public class ImageLoader {
                 }
             }
         }.execute();
+    }
+
+    public static void loadScreenshot(final Context c, final String url, final ImageView iv, final int placeholderRes) {
+        iv.setImageResource(placeholderRes);
+        iv.setTag(url);
+
+        if (url == null || url.length() == 0) return;
+
+        Bitmap cached = memGet(url);
+        if (cached != null) {
+            Object tag = iv.getTag();
+            if (tag != null && url.equals(tag.toString())) {
+                applyScreenshotBitmap(c, iv, cached);
+            }
+            return;
+        }
+
+        final int reqW = 1200;
+        final int reqH = 1200;
+
+        final String key = Hash.md5(url);
+        final File f = new File(iconCacheDir(c), key + ".img");
+
+        if (f.exists()) {
+            Bitmap fb = decodeSampledFile(f.getAbsolutePath(), reqW, reqH);
+            if (fb != null) {
+                memPut(url, fb);
+                Object tag = iv.getTag();
+                if (tag != null && url.equals(tag.toString())) {
+                    applyScreenshotBitmap(c, iv, fb);
+                }
+                return;
+            }
+        }
+
+        new AsyncTask<Void, Void, Bitmap>() {
+            protected Bitmap doInBackground(Void... v) {
+                try {
+                    byte[] data = Http.getBytes(url);
+                    if (data == null) return null;
+
+                    Bitmap bmp = decodeSampled(data, reqW, reqH);
+                    if (bmp == null) return null;
+
+                    try {
+                        FileOutputStream fos = new FileOutputStream(f);
+                        fos.write(data);
+                        fos.close();
+                    } catch (Throwable e) { }
+
+                    return bmp;
+                } catch (OutOfMemoryError e) {
+                    return null;
+                } catch (Throwable e) {
+                    return null;
+                }
+            }
+
+            protected void onPostExecute(Bitmap bmp) {
+                if (bmp != null) {
+                    memPut(url, bmp);
+                    Object tag = iv.getTag();
+                    if (tag != null && url.equals(tag.toString())) {
+                        try {
+                            applyScreenshotBitmap(c, iv, bmp);
+                        } catch (Throwable e) {
+                            iv.setImageResource(placeholderRes);
+                        }
+                    }
+                } else {
+                    Object tag = iv.getTag();
+                    if (tag != null && url.equals(tag.toString())) {
+                        iv.setImageResource(placeholderRes);
+                    }
+                }
+            }
+        }.execute();
+    }
+
+    private static void applyScreenshotBitmap(Context c, ImageView iv, Bitmap bmp) {
+        if (bmp == null) return;
+        int bmpW = bmp.getWidth();
+        int bmpH = bmp.getHeight();
+
+        int targetHeight = 400;
+        int targetWidth = 240;
+        if (bmpH > 0) {
+            targetWidth = (int) (targetHeight * ((float) bmpW / bmpH));
+        }
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(targetWidth, targetHeight);
+        lp.rightMargin = (int) (10 * c.getResources().getDisplayMetrics().density);
+        iv.setLayoutParams(lp);
+        iv.setImageBitmap(bmp);
     }
 }

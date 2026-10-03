@@ -75,6 +75,8 @@
         <activity android:name=".ui.ProfileActivity" />
 		<activity android:name=".ui.UserProfileActivity" />
 		<activity android:name=".ui.DownloadsActivity" />
+        <activity android:name=".ui.ScreenshotActivity"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
     </application>
 
 </manifest>
