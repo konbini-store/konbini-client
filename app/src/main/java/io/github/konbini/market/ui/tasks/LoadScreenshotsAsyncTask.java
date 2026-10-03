@@ -21,8 +21,9 @@ import io.github.konbini.market.ui.AppDetailActivity;
 import io.github.konbini.market.ui.ScreenshotActivity;
 import io.github.konbini.market.util.ImageLoader;
 
+@SuppressWarnings("deprecation")
 public class LoadScreenshotsAsyncTask extends AsyncTask<Void, Void, ArrayList<String>> {
-    private WeakReference<AppDetailActivity> ref;
+    private final WeakReference<AppDetailActivity> ref;
 
     public LoadScreenshotsAsyncTask(AppDetailActivity ref) {
         this.ref = new WeakReference<>(ref);
