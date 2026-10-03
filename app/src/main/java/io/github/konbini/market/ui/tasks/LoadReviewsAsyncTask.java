@@ -23,7 +23,7 @@ public class LoadReviewsAsyncTask extends AsyncTask<Void, Void, Object> {
     protected Object doInBackground(Void... v) {
         AppDetailActivity activity = ref.get();
         try {
-            int viewerId = Prefs.getUserId(activity);
+//            int viewerId = Prefs.getUserId(activity);
             // TODO
 //            String s = null;
 //            if (s == null)

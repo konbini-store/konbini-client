@@ -8,7 +8,6 @@ import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.widget.ImageView;
 
-import java.io.File;
 import java.lang.ref.WeakReference;
 
 import io.github.konbini.market.net.Http;

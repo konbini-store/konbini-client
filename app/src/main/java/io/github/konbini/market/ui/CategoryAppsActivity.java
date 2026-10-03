@@ -2,25 +2,22 @@ package io.github.konbini.market.ui;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Random;
 
 import io.github.konbini.market.R;
 import io.github.konbini.market.api.AppShort;
-//import io.github.konbini.market.net.Api;
 import io.github.konbini.market.api.Api;
+import io.github.konbini.market.ui.tasks.LoadAppsAsyncTask;
 import io.github.konbini.market.util.ImageLoader;
 import io.github.konbini.market.util.LocaleHelper;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Typeface;
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -33,7 +30,7 @@ public class CategoryAppsActivity extends Activity {
     private View loadingOverlay;
     private AppListAdapter adapter;
     private final ArrayList<AppShort> items = new ArrayList<>();
-    final ArrayList<AppShort> originalItems = new ArrayList<>();
+    public final ArrayList<AppShort> originalItems = new ArrayList<>();
     private View promoRoot;
     private ImageView promoIcon;
     private TextView promoText;
@@ -87,7 +84,7 @@ public class CategoryAppsActivity extends Activity {
             Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/storopia.ttf");
             if (titleView != null) titleView.setTypeface(tf);
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("onCreate@CategoryAA", "Something went wrong: ", e);
         }
 
         if (titleView != null) titleView.setText(getString(isGame ? R.string.games1 : R.string.apps1));
@@ -138,13 +135,14 @@ public class CategoryAppsActivity extends Activity {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void loadApps(final String type, final String query, final boolean isGame, final ArrayList<Integer> appIds) {
         showLoading(true);
         new LoadAppsAsyncTask(this, type, query,
                 isGame, appIds, Api.getInstance(CategoryAppsActivity.this)).execute();
     }
 
-    void applySort() {
+    public void applySort() {
         items.clear();
         items.addAll(originalItems);
         if (sortDownloads) {
@@ -160,7 +158,7 @@ public class CategoryAppsActivity extends Activity {
         adapter.notifyDataSetChanged();
     }
 
-    void bindPromotion() {
+    public void bindPromotion() {
         if (promoRoot == null || promoIcon == null || promoText == null) return;
         if (originalItems.isEmpty()) {
             promoRoot.setVisibility(View.GONE);
@@ -176,7 +174,7 @@ public class CategoryAppsActivity extends Activity {
         appName.setText(promoApp.name);
     }
 
-    void updateTabButtons() {
+    public void updateTabButtons() {
         if (btnTopFree != null) {
             btnTopFree.setCompoundDrawablePadding(6);
             btnTopFree.setCompoundDrawablesWithIntrinsicBounds(sortDownloads ? R.drawable.btn_strip_mark_off : R.drawable.btn_strip_mark_on, 0, 0, 0);
@@ -187,7 +185,7 @@ public class CategoryAppsActivity extends Activity {
         }
     }
 
-    void showLoading(boolean show) {
+    public void showLoading(boolean show) {
         if (loadingOverlay != null) loadingOverlay.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 }

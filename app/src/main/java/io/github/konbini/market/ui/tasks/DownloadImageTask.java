@@ -7,16 +7,18 @@ import android.util.Log;
 import android.widget.ImageView;
 
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 
 // Source - https://stackoverflow.com/a/10868126
 // Posted by Kyle Clegg, modified by community. See post 'Timeline' for change history
 // Retrieved 2026-07-08, License - CC BY-SA 4.0
 
+@SuppressWarnings("deprecation")
 public class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-    private final ImageView bmImage;
+    private final WeakReference<ImageView> bmImage;
 
     public DownloadImageTask(ImageView bmImage) {
-        this.bmImage = bmImage;
+        this.bmImage = new WeakReference<>(bmImage);
     }
 
     protected Bitmap doInBackground(String... urls) {
@@ -26,13 +28,12 @@ public class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
             InputStream in = new java.net.URL(urldisplay).openStream();
             mIcon11 = BitmapFactory.decodeStream(in);
         } catch (Exception e) {
-            Log.e("Error", e.getMessage());
-            e.printStackTrace();
+            Log.e("DownloadImageTask", "Something went wrong: ", e);
         }
         return mIcon11;
     }
 
     protected void onPostExecute(Bitmap result) {
-        bmImage.setImageBitmap(result);
+        bmImage.get().setImageBitmap(result);
     }
 }

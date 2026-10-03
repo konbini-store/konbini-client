@@ -1,7 +1,6 @@
 package io.github.konbini.market.ui.tasks;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
 
@@ -14,6 +13,7 @@ import io.github.konbini.market.ui.AppDetailActivity;
 import io.github.konbini.market.ui.LoginActivity;
 import io.github.konbini.market.util.Prefs;
 
+@SuppressWarnings("deprecation")
 public class ShowCommentsAsyncTask extends AsyncTask<Void, Void, Object> {
     private final WeakReference<AppDetailActivity> context;
     private final int reviewId;
@@ -27,9 +27,10 @@ public class ShowCommentsAsyncTask extends AsyncTask<Void, Void, Object> {
     protected Object doInBackground(Void... v) {
         try {
             // TODO
-            String s = null; //Http.getString(Api.reviewCommentsUrl(AppDetailActivity.this, reviewId));
-            if (s == null) return "null response";
-            return new JSONArray(s);
+//            String s = null; //Http.getString(Api.reviewCommentsUrl(AppDetailActivity.this, reviewId));
+//            if (s == null)
+                return "null response";
+//            return new JSONArray(s);
         } catch (Exception e) {
             return e.toString();
         }

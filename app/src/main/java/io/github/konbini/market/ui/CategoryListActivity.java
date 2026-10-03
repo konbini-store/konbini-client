@@ -1,15 +1,9 @@
 package io.github.konbini.market.ui;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Random;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import io.github.konbini.market.R;
-import io.github.konbini.market.api.AppShort;
 import io.github.konbini.market.model.AppItem;
 import io.github.konbini.market.net.Api;
 import io.github.konbini.market.ui.tasks.LoadDataAsyncTask;
@@ -20,7 +14,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -31,8 +24,8 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
+@SuppressWarnings("deprecation")
 public class CategoryListActivity extends Activity {
 
     public static class CategoryItem {
@@ -46,8 +39,8 @@ public class CategoryListActivity extends Activity {
     private ListView list;
     private TextView titleView;
     private View loadingOverlay;
-    public final ArrayList<CategoryItem> items = new ArrayList<CategoryItem>();
-    public final ArrayList<AppItem> allApps = new ArrayList<AppItem>();
+    public final ArrayList<CategoryItem> items = new ArrayList<>();
+    public final ArrayList<AppItem> allApps = new ArrayList<>();
     public ArrayAdapter<CategoryItem> adapter;
     public boolean isGame;
     private View promoHeader;
@@ -66,27 +59,23 @@ public class CategoryListActivity extends Activity {
 
         isGame = getIntent().getBooleanExtra("is_game", false);
 
-        titleView = (TextView) findViewById(R.id.txtTitle);
-        list = (ListView) findViewById(R.id.list);
+        titleView = findViewById(R.id.txtTitle);
+        list = findViewById(R.id.list);
         loadingOverlay = findViewById(R.id.loadingOverlay);
 
-        ImageButton btnHome = (ImageButton) findViewById(R.id.btnHome);
-        ImageButton btnSearch = (ImageButton) findViewById(R.id.btnSearch);
+        ImageButton btnHome = findViewById(R.id.btnHome);
+        ImageButton btnSearch = findViewById(R.id.btnSearch);
 
         if (btnHome != null) {
-                        btnHome.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    Intent i = new Intent(CategoryListActivity.this, MainActivity.class);
-                    i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    startActivity(i);
-                    finish();
-                }
+            btnHome.setOnClickListener(v -> {
+                Intent i = new Intent(CategoryListActivity.this, MainActivity.class);
+                i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(i);
+                finish();
             });
         }
         if (btnSearch != null) {
-            btnSearch.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) { startActivity(new Intent(CategoryListActivity.this, SearchActivity.class)); }
-            });
+            btnSearch.setOnClickListener(v -> startActivity(new Intent(CategoryListActivity.this, SearchActivity.class)));
         }
 
         if (titleView != null) {

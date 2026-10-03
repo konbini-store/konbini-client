@@ -12,9 +12,9 @@ import io.github.konbini.market.api.Api;
 import io.github.konbini.market.api.AppShort;
 import io.github.konbini.market.ui.SearchActivity;
 
+@SuppressWarnings("deprecation")
 public class SearchTask extends AsyncTask<Void, Void, Object> {
     private final String q;
-    private String url;
     private final WeakReference<SearchActivity> ref;
 
     public SearchTask(SearchActivity act, String q) {
@@ -51,7 +51,7 @@ public class SearchTask extends AsyncTask<Void, Void, Object> {
         context.data.addAll(listOut);
         context.adapter.refreshInstalledPackages();
         context.adapter.notifyDataSetChanged();
-        if (listOut.size() == 0)
+        if (listOut.isEmpty())
             Toast.makeText(context, R.string.nothing_found, Toast.LENGTH_SHORT).show();
     }
 

@@ -17,6 +17,7 @@ import io.github.konbini.market.api.AppShort;
 import io.github.konbini.market.model.AppItem;
 import io.github.konbini.market.ui.CategoryListActivity;
 
+@SuppressWarnings("deprecation")
 public class LoadDataAsyncTask extends AsyncTask<Void, Void, Boolean> {
     final ArrayList<CategoryListActivity.CategoryItem> outCats = new ArrayList<>();
     final ArrayList<AppItem> outApps = new ArrayList<>();

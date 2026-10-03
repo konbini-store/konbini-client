@@ -10,6 +10,7 @@ import java.util.HashSet;
 import io.github.konbini.market.R;
 import io.github.konbini.market.api.Api;
 import io.github.konbini.market.api.AppShort;
+import io.github.konbini.market.ui.CategoryAppsActivity;
 
 @SuppressWarnings("deprecation")
 public class LoadAppsAsyncTask extends AsyncTask<Void, Void, ArrayList<AppShort>> {

@@ -358,7 +358,7 @@ public class AppDetailActivity extends Activity {
     }
 
     public void bindVersionsTab() {
-        if (app == null || app.versions == null || app.versions.size() == 0) {
+        if (app == null || app.versions.size() == 0) {
             listVersions.setAdapter(null);
             return;
         }
@@ -367,7 +367,7 @@ public class AppDetailActivity extends Activity {
     }
 
     private AppVersion getLatestSupportedVersion() {
-        if (app == null || app.versions == null || app.versions.size() == 0) return null;
+        if (app == null || app.versions.size() == 0) return null;
 
         AppVersion latest = null;
         for (int i = 0; i < app.versions.size(); i++) {
