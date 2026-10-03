@@ -30,7 +30,7 @@ public class LoginActivity extends Activity {
         LocaleHelper.applySavedLocale(this);
         setContentView(R.layout.activity_login);
 
-        Toast.makeText(this, "Social features not implemented yet!", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, R.string.social_features_not_implemented_yet, Toast.LENGTH_LONG).show();
         this.finish();
 
         edtUser = (EditText) findViewById(R.id.edtUser);

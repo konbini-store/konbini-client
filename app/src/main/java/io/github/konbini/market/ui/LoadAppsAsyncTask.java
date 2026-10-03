@@ -11,6 +11,7 @@ import io.github.konbini.market.R;
 import io.github.konbini.market.api.Api;
 import io.github.konbini.market.api.AppShort;
 
+@SuppressWarnings("deprecation")
 public class LoadAppsAsyncTask extends AsyncTask<Void, Void, ArrayList<AppShort>> {
     WeakReference<CategoryAppsActivity> ref;
 

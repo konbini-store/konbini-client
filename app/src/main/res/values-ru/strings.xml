@@ -107,4 +107,5 @@
     <string name="reviews_count2">Отзывы ($1%d)</string>
     <string name="app_compatible">✔ Совместимо</string>
     <string name="app_not_compatible">✘ Не совместимо</string>
+    <string name="social_features_not_implemented_yet">Социальные функции пока не реализованы!</string>
 </resources>

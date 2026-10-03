@@ -31,6 +31,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -54,7 +55,6 @@ import static android.view.View.GONE;
 public class AppDetailActivity extends Activity {
     public int appId;
 
-    private View header;
     public ImageView imgIcon;
     public TextView txtName;
     public TextView txtAuthor;
@@ -67,7 +67,9 @@ public class AppDetailActivity extends Activity {
     TextView txtreviewinfo;
     public RatingBar ratingHeader;
     RatingBar ratingAddReview;
-    private Button btnInstall, btnOpen, btnUninstall, btnCancelDownload;
+    private Button btnInstall;
+    private Button btnOpen;
+    private Button btnUninstall;
     public TextView txtScreensTitle;
     public TextView txtReviewsTitle;
     private TextView txtDownloadProgress;
@@ -77,18 +79,15 @@ public class AppDetailActivity extends Activity {
     private LinearLayout installButtons;
     private ProgressBar progressDownload;
 
-    private LinearLayout detailsContainer, reviewsTabContainer;
+    private LinearLayout reviewsTabContainer;
     private View detailsScrollView, reviewsScrollView;
-    private ListView list;
     private ListView listVersions;
     private Button btnTabDetails, btnTabVersions, btnTabReviews;
-    ArrayList<ReviewItem> reviews = new ArrayList<ReviewItem>();
+    ArrayList<ReviewItem> reviews = new ArrayList<>();
     ReviewAdapter adapter;
-    private int activeTab = 0;
 
     public String pkgName = "";
-    private String selectedVersion = "";
-    private int currentMinApi = 1;
+    private final String selectedVersion = "";
     boolean hasOwnReview = false;
     public String currentIconFile = "";
 
@@ -143,17 +142,17 @@ public class AppDetailActivity extends Activity {
 
         loadingOverlay = findViewById(R.id.loadingOverlay);
         txtLoading = findViewById(R.id.txtLoading);
-        detailsContainer = findViewById(R.id.detailsContainer);
+        LinearLayout detailsContainer = findViewById(R.id.detailsContainer);
         reviewsTabContainer = findViewById(R.id.reviewsTabContainer);
         detailsScrollView = findViewById(R.id.detailsScrollView);
         reviewsScrollView = findViewById(R.id.reviewsScrollView);
-        list = findViewById(R.id.listReviews);
+        ListView list = findViewById(R.id.listReviews);
         listVersions = findViewById(R.id.listVersions);
         btnTabDetails = findViewById(R.id.btnTabDetails);
         btnTabVersions = findViewById(R.id.btnTabVersions);
         btnTabReviews = findViewById(R.id.btnTabReviews);
 
-        header = LayoutInflater.from(this).inflate(R.layout.app_detail_header, detailsContainer, false);
+        View header = LayoutInflater.from(this).inflate(R.layout.app_detail_header, detailsContainer, false);
         detailsContainer.addView(header);
 
         imgIcon = findViewById(R.id.imgIcon);
@@ -177,7 +176,7 @@ public class AppDetailActivity extends Activity {
         btnInstall = findViewById(R.id.btnInstall);
         btnOpen = findViewById(R.id.btnOpen);
         btnUninstall = findViewById(R.id.btnUninstall);
-        btnCancelDownload = findViewById(R.id.btnCancelDownload);
+        Button btnCancelDownload = findViewById(R.id.btnCancelDownload);
         txtDownloadProgress = findViewById(R.id.txtDownloadProgress);
         progressDownload = findViewById(R.id.progressDownload);
         downloadPanel = findViewById(R.id.downloadPanel);
@@ -287,11 +286,17 @@ public class AppDetailActivity extends Activity {
         return true;
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     protected void onResume() {
         super.onResume();
         Log.d("AppDetailActivity", "onResume is called!");
-        registerReceiver(dlReceiver, new IntentFilter(DownloadService.ACTION_PROGRESS));
+        IntentFilter filter = new IntentFilter("io.github.konbini.market.DOWNLOAD_PROGRESS");
+        if (Build.VERSION.SDK_INT >= 33) {
+            registerReceiver(dlReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(dlReceiver, filter);
+        }
         restoreDownloadState();
     }
 
@@ -339,7 +344,6 @@ public class AppDetailActivity extends Activity {
     }
 
     private void showTab(int tab) {
-        activeTab = tab;
         detailsScrollView.setVisibility(tab == 0 ? View.VISIBLE : GONE);
         listVersions.setVisibility(tab == 1 ? View.VISIBLE : GONE);
         reviewsScrollView.setVisibility(tab == 2 ? View.VISIBLE : GONE);
@@ -521,7 +525,8 @@ public class AppDetailActivity extends Activity {
                 i.putExtra("app_package", app == null ? "" : app.packageId);
                 i.putExtra("icon", currentIconFile == null ? "" : currentIconFile);
                 i.putExtra("url", finalUrl);
-                i.putExtra("file_name", "konbini_" + appId + (selectedVersion.length() > 0 ? ("_" + selectedVersion) : "") + ".apk");
+                i.putExtra("file_name", "konbini_" + appId +
+                        (version.versionName.length() > 0 ? ("_" + selectedVersion) : "") + ".apk");
                 startService(i);
                 showDownloadUi(0, 0);
             });
@@ -619,11 +624,11 @@ public class AppDetailActivity extends Activity {
         layout.addView(btnProfile);
 
         final Button btnLike = new Button(this);
-        btnLike.setText((isRu() ? "Лайк" : "Like") + " (" + r.likes + ")");
+        btnLike.setText(String.format(getString(R.string.like_btn), r.likes));
         layout.addView(btnLike);
 
         final Button btnDislike = new Button(this);
-        btnDislike.setText((isRu() ? "Дизлайк" : "Dislike") + " (" + r.dislikes + ")");
+        btnDislike.setText(String.format(getString(R.string.dislike_btn), r.dislikes));
         layout.addView(btnDislike);
 
         Button btnComments = new Button(this);

@@ -33,7 +33,7 @@
     <string name="reviewsinfo">ご意見をお寄せください</string>
     <string name="screenshots">スクリーンショット</string>
     <string name="downloads_count">%1$dダウンロード</string>
-    <string name="reviews_count">%1$dレビュー</string>
+    <string name="reviews_count">%1$d レビュー</string>
     <string name="download_progress">ダウンロードの進捗状況</string>
     <string name="search_hint">何を探していますか？</string>
     <string name="reloadappsettings">新しい設定を適用するには、アプリを再起動してください</string>
@@ -105,6 +105,7 @@
     <string name="reviews_count2">レビュー (%1$d)</string>
     <string name="app_compatible">✔ 互換性があります</string>
     <string name="app_not_compatible">✘ 互換性がありません</string>
+    <string name="social_features_not_implemented_yet">ソーシャル機能はまだ実装されていません！</string>
 
 
 </resources>
