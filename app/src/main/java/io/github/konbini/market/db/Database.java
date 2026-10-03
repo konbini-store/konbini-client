@@ -9,7 +9,6 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import org.json.JSONArray;
-import org.json.JSONObject;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -18,7 +17,6 @@ import java.util.List;
 
 import io.github.konbini.market.api.App;
 import io.github.konbini.market.api.AppShort;
-import io.github.konbini.market.api.AppVersion;
 
 public class Database {
     public static SQLiteDatabase getDatabase(Context context) {
@@ -184,8 +182,8 @@ public class Database {
                             cursor.getInt(cursor.getColumnIndex("id")),
                             cursor.getString(cursor.getColumnIndex("name")),
                             cursor.getInt(cursor.getColumnIndex("api")),
-                            cursor.getString(cursor.getColumnIndex("categoryCode")),
-                            cursor.getString(cursor.getColumnIndex("categoryLabel")),
+                            cursor.getString(cursor.getColumnIndex("category_code")),
+                            cursor.getString(cursor.getColumnIndex("category_label")),
                             cursor.getString(cursor.getColumnIndex("icon")),
                             abis,
                             cursor.getString(cursor.getColumnIndex("short_description")),
