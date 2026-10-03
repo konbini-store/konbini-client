@@ -107,4 +107,6 @@
     <string name="app_compatible">✔ Compatible</string>
     <string name="app_not_compatible">✘ Not compatible</string>
     <string name="social_features_not_implemented_yet">Social features not implemented yet!</string>
+    <string name="logged_in_as">Logged in as %1$s</string>
+    <string name="not_logged_in">Not logged in</string>
 </resources>

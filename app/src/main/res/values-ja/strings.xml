@@ -106,6 +106,8 @@
     <string name="app_compatible">✔ 互換性があります</string>
     <string name="app_not_compatible">✘ 互換性がありません</string>
     <string name="social_features_not_implemented_yet">ソーシャル機能はまだ実装されていません！</string>
+    <string name="logged_in_as">%1$sとしてログインしました</string>
+    <string name="not_logged_in">ログインしていません</string>
 
 
 </resources>
