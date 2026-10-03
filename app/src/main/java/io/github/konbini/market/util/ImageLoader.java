@@ -1,15 +1,15 @@
 package io.github.konbini.market.util;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.util.LinkedHashMap;
 
-import io.github.konbini.market.net.Http;
+import io.github.konbini.market.ui.tasks.LoadImageAsyncTask;
+import io.github.konbini.market.util.tasks.LoadBannerAsyncTask;
 
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
@@ -27,7 +27,9 @@ public class ImageLoader {
 
     private static File iconCacheDir(Context c) {
         File d = new File(c.getCacheDir(), "icons");
-        if (!d.exists()) d.mkdirs();
+        boolean dir_created = d.exists() || d.mkdirs();
+        if (!dir_created)
+            Log.w("iconCacheDir@IL", "Failed to create directory!");
         return d;
     }
 
@@ -35,11 +37,11 @@ public class ImageLoader {
         synchronized (mem) { return mem.get(k); }
     }
 
-    private static void memPut(String k, Bitmap b) {
+    public static void memPut(String k, Bitmap b) {
         synchronized (mem) { mem.put(k, b); }
     }
 
-    private static int calcInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+    public static int calcInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
         int height = options.outHeight;
         int width = options.outWidth;
         int inSampleSize = 1;
@@ -56,7 +58,7 @@ public class ImageLoader {
     }
 
     @SuppressWarnings("deprecation")
-    private static Bitmap decodeSampled(byte[] data, int reqWidth, int reqHeight) {
+    public static Bitmap decodeSampled(byte[] data, int reqWidth, int reqHeight) {
         try {
             BitmapFactory.Options bounds = new BitmapFactory.Options();
             bounds.inJustDecodeBounds = true;
@@ -109,6 +111,7 @@ public class ImageLoader {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public static void load(final Context c, final String url, final ImageView iv, final int placeholderRes) {
         iv.setImageResource(placeholderRes);
         iv.setTag(url);
@@ -144,49 +147,10 @@ public class ImageLoader {
             }
         }
 
-        new AsyncTask<Void, Void, Bitmap>() {
-            protected Bitmap doInBackground(Void... v) {
-                try {
-                    byte[] data = Http.getBytes(url);
-                    if (data == null) return null;
-
-                    Bitmap bmp = decodeSampled(data, reqW, reqH);
-                    if (bmp == null) return null;
-
-                    try {
-                        FileOutputStream fos = new FileOutputStream(f);
-                        fos.write(data);
-                        fos.close();
-                    } catch (Throwable e) { }
-
-                    return bmp;
-                } catch (OutOfMemoryError e) {
-                    return null;
-                } catch (Throwable e) {
-                    return null;
-                }
-            }
-
-            protected void onPostExecute(Bitmap bmp) {
-                if (bmp != null) {
-                    memPut(url, bmp);
-                    Object tag = iv.getTag();
-                    if (tag != null && url.equals(tag.toString())) {
-                        try {
-                            iv.setImageBitmap(bmp);
-                        } catch (Throwable e) {
-                            iv.setImageResource(placeholderRes);
-                        }
-                    }
-                } else {
-                    Object tag = iv.getTag();
-                    if (tag != null && url.equals(tag.toString())) {
-                        iv.setImageResource(placeholderRes);
-                    }
-                }
-            }
-        }.execute();
+        new LoadImageAsyncTask(url, reqW, reqW, f, iv, placeholderRes).execute();
     }
+
+    @SuppressWarnings("deprecation")
     public static void loadBanner(final Context c, final String url, final ImageView iv, final int placeholderRes) {
         iv.setImageResource(placeholderRes);
         iv.setTag(url);
@@ -205,41 +169,10 @@ public class ImageLoader {
         final int reqW = 1024;
         final int reqH = 400;
 
-        new AsyncTask<Void, Void, Bitmap>() {
-            protected Bitmap doInBackground(Void... v) {
-                try {
-                    byte[] data = Http.getBytes(url);
-                    if (data == null) return null;
-
-                    BitmapFactory.Options bounds = new BitmapFactory.Options();
-                    bounds.inJustDecodeBounds = true;
-                    BitmapFactory.decodeByteArray(data, 0, data.length, bounds);
-
-                    BitmapFactory.Options opts = new BitmapFactory.Options();
-                    opts.inSampleSize = calcInSampleSize(bounds, reqW, reqH);
-                    opts.inPreferredConfig = Bitmap.Config.RGB_565;
-                    opts.inDither = true;
-
-                    return BitmapFactory.decodeByteArray(data, 0, data.length, opts);
-                } catch (Throwable e) {
-                    return null;
-                }
-            }
-
-            protected void onPostExecute(Bitmap bmp) {
-                if (bmp != null) {
-                    memPut("banner:" + url, bmp);
-                    Object tag = iv.getTag();
-                    if (tag != null && url.equals(tag.toString())) {
-                        iv.setImageBitmap(bmp);
-                    }
-                } else {
-                    iv.setImageResource(placeholderRes);
-                }
-            }
-        }.execute();
+        new LoadBannerAsyncTask(url, reqW, reqH, iv, placeholderRes).execute();
     }
 
+    @SuppressWarnings("deprecation")
     public static void loadScreenshot(final Context c, final String url, final ImageView iv, final int placeholderRes) {
         iv.setImageResource(placeholderRes);
         iv.setTag(url);
@@ -273,51 +206,10 @@ public class ImageLoader {
             }
         }
 
-        new AsyncTask<Void, Void, Bitmap>() {
-            protected Bitmap doInBackground(Void... v) {
-                try {
-                    byte[] data = Http.getBytes(url);
-                    if (data == null) return null;
-
-                    Bitmap bmp = decodeSampled(data, reqW, reqH);
-                    if (bmp == null) return null;
-
-                    try {
-                        FileOutputStream fos = new FileOutputStream(f);
-                        fos.write(data);
-                        fos.close();
-                    } catch (Throwable e) { }
-
-                    return bmp;
-                } catch (OutOfMemoryError e) {
-                    return null;
-                } catch (Throwable e) {
-                    return null;
-                }
-            }
-
-            protected void onPostExecute(Bitmap bmp) {
-                if (bmp != null) {
-                    memPut(url, bmp);
-                    Object tag = iv.getTag();
-                    if (tag != null && url.equals(tag.toString())) {
-                        try {
-                            applyScreenshotBitmap(c, iv, bmp);
-                        } catch (Throwable e) {
-                            iv.setImageResource(placeholderRes);
-                        }
-                    }
-                } else {
-                    Object tag = iv.getTag();
-                    if (tag != null && url.equals(tag.toString())) {
-                        iv.setImageResource(placeholderRes);
-                    }
-                }
-            }
-        }.execute();
+        new LoadScreenshotAsyncTask(c, url, reqW, reqH, f, iv, placeholderRes).execute();
     }
 
-    private static void applyScreenshotBitmap(Context c, ImageView iv, Bitmap bmp) {
+    static void applyScreenshotBitmap(Context c, ImageView iv, Bitmap bmp) {
         if (bmp == null) return;
         int bmpW = bmp.getWidth();
         int bmpH = bmp.getHeight();
