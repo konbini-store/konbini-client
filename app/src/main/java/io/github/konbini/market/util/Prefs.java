@@ -41,7 +41,7 @@ public class Prefs {
     }
 
     public static String getLang(Context c) {
-        return sp(c).getString("lang", "en");
+        return sp(c).getString("lang", null);
     }
 
     public static void setLang(Context c, String lang) {

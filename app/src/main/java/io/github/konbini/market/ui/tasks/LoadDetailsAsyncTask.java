@@ -84,7 +84,7 @@ public class LoadDetailsAsyncTask extends AsyncTask<Void, Void, App> {
             Intent intent = new Intent(activity, CategoryAppsActivity.class);
             intent.putExtra("type", "author");
             intent.putExtra("query", dev);
-            intent.putExtra("title", "by "+dev);
+            intent.putExtra("title", String.format(activity.getString(R.string.apps_made_by), o.author));
             activity.startActivity(intent);
         });
         if (desc.length() > 100) {

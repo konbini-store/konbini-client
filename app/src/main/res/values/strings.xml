@@ -38,7 +38,7 @@
     <string name="search_hint">Enter app name</string>
     <string name="reloadappsettings">To apply the new settings, restart the app</string>
     <string name="infoproject">Konbini is an open-source app store for Android 1.0+ apps</string>
-
+    <string name="apps_made_by">by %1$s</string>
     <string name="prev">Prev</string>
     <string name="next">Next</string>
     <string name="server_instance">Server instance</string>
@@ -47,6 +47,7 @@
     <string name="save">Save</string>
     <string name="lang_en">English</string>
     <string name="lang_ru">Russian</string>
+    <string name="lang_ja">Japanese</string>
     <string name="all_categories">All categories</string>
     <string name="category">Category</string>
     <string name="featured_apps">Featured apps</string>
@@ -95,4 +96,11 @@
     <string name="profile_btn">Profile</string>
     <string name="like_btn">Like (%d)</string>
     <string name="dislike_btn">Dislike (%d)</string>
+    <string name="social_server">Social server</string>
+    <string name="about_social_servers">Social servers enable social features like reviews, accounts, charts (instead of featured apps), analytics, etc.</string>
+    <string name="share_analytics">Share analytics</string>
+    <string name="about_analytics">Analytics include information about your device, and information about the apps you download.</string>
+    <string name="about_analytics_usage">How the collected data is used is at the discretion of the server\'s maintainer(s). You should read the server\'s privacy policy before using it.</string>
+    <string name="clear_cache">Clear cache</string>
+    <string name="about_clear_cache">Usually Konbini automatically clears cache when the server\'s index updates. However, if you encounter any issues, you can always clear the app\'s cache right now.</string>
 </resources>

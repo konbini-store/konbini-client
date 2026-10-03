@@ -37,6 +37,8 @@
     <string name="reloadappsettings">Чтобы новые настройки вступили в силу, перезайдите в приложение</string>
     <string name="infoproject">Konbini — это магазин приложений для ваших старых устройств на Android.</string>
 
+
+    <string name="apps_made_by">от %1$s</string>
     <string name="prev">Назад</string>
     <string name="next">Вперёд</string>
     <string name="server_instance">Инстанс сервера</string>
@@ -45,6 +47,7 @@
     <string name="save">Сохранить</string>
     <string name="lang_en">Английский (English)</string>
     <string name="lang_ru">Русский (Russian)</string>
+    <string name="lang_ja">Японский (Japanese)</string>
     <string name="all_categories">Все категории</string>
     <string name="category">Категория</string>
     <string name="featured_apps">Популярные приложения</string>

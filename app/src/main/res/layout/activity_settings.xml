@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#000000">
@@ -20,7 +21,8 @@
             android:id="@+id/edtServer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="konbini.lol" />
+            android:hint="http://konbini.lol"
+            tools:ignore="HardcodedText" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -32,7 +34,7 @@
             android:id="@+id/textView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Social server" />
+            android:text="@string/social_server" />
 
         <EditText
             android:id="@+id/socialServerUrl"
@@ -40,31 +42,32 @@
             android:layout_height="wrap_content"
             android:ems="10"
             android:hint="http://social.konbini.lol"
-            android:inputType="textUri" />
+            android:inputType="textUri"
+            tools:ignore="HardcodedText" />
 
         <TextView
             android:id="@+id/textView5"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Social servers enable social features like reviews, accounts, charts (instead of featured apps), analytics, etc." />
+            android:text="@string/about_social_servers" />
 
         <CheckBox
             android:id="@+id/checkBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Share analytics" />
+            android:text="@string/share_analytics" />
 
         <TextView
             android:id="@+id/textView3"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Analytics include information about your device, and information about the apps you download." />
+            android:text="@string/about_analytics" />
 
         <TextView
             android:id="@+id/textView4"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="How the collected data is used is at the discretion of the server's maintainer(s). You should read the server's privacy policy before using it." />
+            android:text="@string/about_analytics_usage" />
 
         <TextView
             android:layout_width="match_parent"
@@ -121,13 +124,13 @@
             android:id="@+id/clearCacheButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Clear cache" />
+            android:text="@string/clear_cache" />
 
         <TextView
             android:id="@+id/textView6"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Usually Konbini automatically clears cache when the server's index updates. However, if you encounter any issues, you can always clear the app's cache right now." />
+            android:text="@string/about_clear_cache" />
 
     </LinearLayout>
 </ScrollView>

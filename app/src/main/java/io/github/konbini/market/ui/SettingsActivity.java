@@ -16,6 +16,7 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
 import java.io.DataOutputStream;
+import java.util.Locale;
 
 public class SettingsActivity extends Activity {
 
@@ -42,7 +43,7 @@ public class SettingsActivity extends Activity {
         clearCacheButton = (Button) findViewById(R.id.clearCacheButton);
 
         ArrayAdapter<String> a = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item,
-                new String[]{getString(R.string.lang_ru), getString(R.string.lang_en)});
+                new String[]{getString(R.string.lang_ru), getString(R.string.lang_en), getString(R.string.lang_ja)});
         a.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spnLang.setAdapter(a);
 
@@ -50,7 +51,22 @@ public class SettingsActivity extends Activity {
         socialServer.setText(Prefs.getSocialServer(this));
         enableAnalytics.setChecked(Boolean.TRUE.equals(Prefs.getAnalyticsConsent(this)));
         String lang = Prefs.getLang(this);
-        spnLang.setSelection("en".equals(lang) ? 1 : 0);
+        if (lang == null) {
+            String defaultLang = Locale.getDefault().getLanguage();
+            if ("ja".equals(defaultLang)) {
+                spnLang.setSelection(2);
+            } else if ("en".equals(defaultLang)) {
+                spnLang.setSelection(1);
+            } else {
+                spnLang.setSelection(0);
+            }
+        } else if ("ja".equals(lang)) {
+            spnLang.setSelection(2);
+        } else if ("en".equals(lang)) {
+            spnLang.setSelection(1);
+        } else {
+            spnLang.setSelection(0);
+        }
 
         if (chkAutoInstallRoot != null) {
             chkAutoInstallRoot.setChecked(Prefs.isAutoInstallRoot(this));
@@ -91,7 +107,15 @@ public class SettingsActivity extends Activity {
                 Prefs.setSocialServer(SettingsActivity.this, socialHost);
                 Prefs.setAnalyticsConsent(SettingsActivity.this, enableAnalytics.isChecked());
 
-                String sel = (spnLang.getSelectedItemPosition() == 1) ? "en" : "ru";
+                String sel;
+                int pos = spnLang.getSelectedItemPosition();
+                if (pos == 2) {
+                    sel = "ja";
+                } else if (pos == 1) {
+                    sel = "en";
+                } else {
+                    sel = "ru";
+                }
                 Prefs.setLang(SettingsActivity.this, sel);
 
                 LocaleHelper.applySavedLocale(SettingsActivity.this);
