@@ -1,10 +1,12 @@
 package io.github.konbini.market.service;
 
+import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
@@ -523,6 +525,7 @@ public class DownloadService extends Service {
                 persistTasks();
 
                 if (installed) {
+                    t.filePath = "";
                     notifyInstalled(t);
                     sendStateBroadcast(t, true, false, false);
                 } else {
@@ -606,21 +609,50 @@ public class DownloadService extends Service {
 
     private boolean installSilently(String apkPath) {
         Process p = null;
-        DataOutputStream os = null;
+        BufferedReader reader = null;
+        BufferedReader errReader = null;
         try {
             String safePath = apkPath.replace("'", "'\\''");
-            p = Runtime.getRuntime().exec("su");
-            os = new DataOutputStream(p.getOutputStream());
-            os.writeBytes("pm install -r '" + safePath + "'\n");
-            os.writeBytes("exit\n");
-            os.flush();
+            p = Runtime.getRuntime().exec(new String[]{"su", "-c", "pm install -r '" + safePath + "'"});
+
+            StringBuilder output = new StringBuilder();
+            reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append("\n");
+            }
+
+            StringBuilder errorOutput = new StringBuilder();
+            errReader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+            while ((line = errReader.readLine()) != null) {
+                errorOutput.append(line).append("\n");
+            }
+
             int rc = p.waitFor();
-            return rc == 0;
+            String outStr = output.toString().trim();
+            String errStr = errorOutput.toString().trim();
+
+            if (rc != 0 || (outStr.toLowerCase().contains("failure") || errStr.toLowerCase().contains("failure"))) {
+                Log.e("installSilently@DlServ", "Failed to install app silently, exit code: " + rc +
+                        ", stdout: " + outStr + ", stderr: " + errStr);
+                return false;
+            } else {
+                Log.i("installSilently@DlServ", "Installed app silently successfully, stdout: " + outStr);
+                return true;
+            }
         } catch (Exception e) {
+            Log.e("installSilently@DlServ", "Failed to install app silently: ", e);
             return false;
         } finally {
-            try { if (os != null) os.close(); } catch (Exception e) { }
-            try { if (p != null) p.destroy(); } catch (Exception e) { }
+            try { if (reader != null) reader.close(); } catch (Exception e) {
+                Log.e("installSilently@DlServ", "Failed to close BufferedReader: ", e);
+            }
+            try { if (errReader != null) errReader.close(); } catch (Exception e) {
+                Log.e("installSilently@DlServ", "Failed to close BufferedReader for errors: ", e);
+            }
+            try { if (p != null) p.destroy(); } catch (Exception e) {
+                Log.e("installSilently@DlServ", "Failed to destroy Process: ", e);
+            }
         }
     }
 }
