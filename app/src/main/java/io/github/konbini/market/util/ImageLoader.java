@@ -3,7 +3,6 @@ package io.github.konbini.market.util;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.LinkedHashMap;
-import java.util.Map;
 
 import io.github.konbini.market.net.Http;
 
@@ -56,6 +55,7 @@ public class ImageLoader {
         return inSampleSize;
     }
 
+    @SuppressWarnings("deprecation")
     private static Bitmap decodeSampled(byte[] data, int reqWidth, int reqHeight) {
         try {
             BitmapFactory.Options bounds = new BitmapFactory.Options();
@@ -82,6 +82,7 @@ public class ImageLoader {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static Bitmap decodeSampledFile(String path, int reqWidth, int reqHeight) {
         try {
             BitmapFactory.Options bounds = new BitmapFactory.Options();
