@@ -48,6 +48,7 @@ public class Database {
 
     /// Saves a given list of 'short apps' into the cache database.
     /// Can be used with Api.getAllApps to save all apps into the cache
+    @SuppressWarnings("TryFinallyCanBeTryWithResources")
     public static void saveApps(Context context, List<AppShort> apps) {
         Log.d("Database", "saveApps count: " + (apps != null ? apps.size() : 0));
         SQLiteDatabase db = getDatabase(context);
@@ -56,20 +57,7 @@ public class Database {
             try {
                 assert apps != null;
                 for (AppShort as : apps) {
-                    ContentValues cv = new ContentValues();
-                    cv.put("package_name", as.packageName);
-                    cv.put("id", as.id);
-                    cv.put("name", as.name);
-                    cv.put("api", as.api);
-                    cv.put("category_code", as.categoryCode);
-                    cv.put("category_label", as.categoryLabel);
-                    cv.put("icon", as.icon);
-                    cv.put("author", as.author);
-                    cv.put("short_description", as.description);
-                    cv.put("downloads", as.downloads);
-                    cv.put("abis", TextUtils.join(",", as.abis));
-                    cv.put("rating", as.rating);
-                    cv.put("featured", as.featured ? 1 : 0);
+                    ContentValues cv = as.toContentValues();
                     cv.put("cached_at", System.currentTimeMillis());
                     db.replace("apps", null, cv);
                     Log.d("Database", "Saved app: " + as.packageName + ", featured: " + as.featured);
@@ -84,46 +72,33 @@ public class Database {
     }
 
     public static void saveFullApp(Context context, App app) {
-        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(new File(context.getCacheDir(),
-                "cache.db"), null);
-        db.beginTransaction();
+        SQLiteDatabase db = null;
         try {
+            AppShort base = getShortAppById(context, app.id);
+            db = SQLiteDatabase.openOrCreateDatabase(new File(context.getCacheDir(),
+                    "cache.db"), null);
+            db.beginTransaction();
             ContentValues cv = new ContentValues();
-            cv.put("package_name", app.packageId);
-            cv.put("id", app.id);
-            cv.put("name", app.name);
-            cv.put("author", app.author);
-            cv.put("icon", app.icon);
-            cv.put("full_description", app.description);
-
-            cv.put("screenshots", new JSONArray(app.screenshots).toString());
-            cv.put("featured", app.featured ? 1 : 0);
-
-            JSONArray versionsArray = new JSONArray();
-            for (int j = 0; j < app.versions.size(); j++) {
-                AppVersion version = app.versions.valueAt(j);
-                JSONObject vObj = new JSONObject();
-                vObj.put("id", version.id);
-                vObj.put("versionCode", version.versionCode);
-                vObj.put("versionName", version.versionName);
-                vObj.put("minSdk", version.minSdk);
-                vObj.put("size", version.size);
-                vObj.put("downloadUrl", version.downloadUrl);
-                versionsArray.put(vObj);
+            if (base != null) {
+                cv.putAll(base.toContentValues());
+            } else {
+                Log.w("saveFullApp@Database", String.format("Can't find app #%d!", app.id));
             }
-            cv.put("versions", versionsArray.toString());
+
+            cv.putAll(app.toContentValues());
 
             db.replace("apps", null, cv);
             db.setTransactionSuccessful();
         } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            db.endTransaction();
-            db.close();
+            Log.e("saveFullApp@Database", "Something went wrong when saving a full app: ", e);
         }
+        if (db == null) return;
+        db.endTransaction();
+        db.close();
     }
 
     @SuppressLint("Range")
+    @SuppressWarnings("TryFinallyCanBeTryWithResources")
     public static App getAppByPackage(Context context, String packageName) {
         SQLiteDatabase db = getDatabase(context);
         try {
@@ -150,7 +125,7 @@ public class Database {
                 cursor.close();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("getAppByPackage@DB", "Something went wrong when getting an app by package: ", e);
         } finally {
             db.close();
         }
@@ -158,6 +133,7 @@ public class Database {
     }
 
     @SuppressLint("Range")
+    @SuppressWarnings("TryFinallyCanBeTryWithResources")
     public static App getAppById(Context context, int appId) {
         SQLiteDatabase db = getDatabase(context);
         try {
@@ -184,7 +160,45 @@ public class Database {
                 cursor.close();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("getAppById@Database", "Something went wrong when getting an app by ID: ", e);
+        } finally {
+            db.close();
+        }
+        return null;
+    }
+
+    @SuppressLint("Range")
+    @SuppressWarnings("TryFinallyCanBeTryWithResources")
+    public static AppShort getShortAppById(Context context, int appId) {
+        SQLiteDatabase db = getDatabase(context);
+        try {
+            Cursor cursor = db.query("apps", null, "id = ?",
+                    new String[]{String.valueOf(appId)}, null, null, null);
+            try {
+                if (cursor.moveToFirst()) {
+                    String abisStr = cursor.getString(cursor.getColumnIndex("abis"));
+                    ArrayList<String> abis = new ArrayList<>();
+                    if (abisStr != null && !TextUtils.isEmpty(abisStr))
+                        abis = new ArrayList<>(Arrays.asList(abisStr.split(",")));
+                    return new AppShort(
+                            cursor.getInt(cursor.getColumnIndex("id")),
+                            cursor.getString(cursor.getColumnIndex("name")),
+                            cursor.getInt(cursor.getColumnIndex("api")),
+                            cursor.getString(cursor.getColumnIndex("categoryCode")),
+                            cursor.getString(cursor.getColumnIndex("categoryLabel")),
+                            cursor.getString(cursor.getColumnIndex("icon")),
+                            abis,
+                            cursor.getString(cursor.getColumnIndex("short_description")),
+                            cursor.getString(cursor.getColumnIndex("author")),
+                            cursor.getString(cursor.getColumnIndex("package_name")),
+                            cursor.getInt(cursor.getColumnIndex("featured")) != 0
+                    );
+                }
+            } finally {
+                cursor.close();
+            }
+        } catch (Exception e) {
+            Log.e("getAppById@Database", "Something went wrong when getting an app by ID: ", e);
         } finally {
             db.close();
         }
@@ -227,6 +241,7 @@ public class Database {
     }
 
     @SuppressLint("Range")
+    @SuppressWarnings("TryFinallyCanBeTryWithResources")
     public static ArrayList<AppShort> getAppsBySelection(Context context, String selection,
                                                          String[] selectionArgs, String orderBy) {
         ArrayList<AppShort> results = new ArrayList<>();
@@ -272,7 +287,9 @@ public class Database {
                 cursor.close();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("getAppsBySelection@DB", "Something went wrong when getting apps by selection: ", e);
+            Log.e("getAppsBySelection@DB", String.format("Failed selection: \"%s\" with arguments %s",
+                    selection, TextUtils.join(",", selectionArgs)));
             return null;
         } finally {
             db.close();
@@ -281,6 +298,7 @@ public class Database {
         return results;
     }
 
+    @SuppressWarnings("TryFinallyCanBeTryWithResources")
     public static boolean hasApps(Context context) {
         SQLiteDatabase db = getDatabase(context);
         try {
@@ -293,13 +311,14 @@ public class Database {
                 cursor.close();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("hasApps@DB", "Something went wrong when checking if there any apps available: ", e);
         } finally {
             db.close();
         }
         return false;
     }
 
+    @SuppressWarnings("TryFinallyCanBeTryWithResources")
     public static boolean hasApp(Context context, String packageName) {
         SQLiteDatabase db = getDatabase(context);
         try {
@@ -310,13 +329,14 @@ public class Database {
                 cursor.close();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("hasApps@DB", "Something went wrong when checking if an app is available by package: ", e);
         } finally {
             db.close();
         }
         return false;
     }
 
+    @SuppressWarnings("TryFinallyCanBeTryWithResources")
     public static boolean hasApp(Context context, int appId) {
         SQLiteDatabase db = getDatabase(context);
         try {
@@ -327,7 +347,7 @@ public class Database {
                 cursor.close();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("hasApps@DB", "Something went wrong when checking if an app is available by ID: ", e);
         } finally {
             db.close();
         }

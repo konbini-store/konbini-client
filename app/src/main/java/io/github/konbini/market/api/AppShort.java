@@ -1,6 +1,8 @@
 package io.github.konbini.market.api;
 
+import android.content.ContentValues;
 import android.os.Build;
+import android.text.TextUtils;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -114,5 +116,25 @@ public class AppShort {
         }
 
         return hasMatchingAbi;
+    }
+
+    public ContentValues toContentValues() {
+        ContentValues cv = new ContentValues();
+
+        cv.put("package_name", this.packageName);
+        cv.put("id", this.id);
+        cv.put("name", this.name);
+        cv.put("author", this.author);
+        cv.put("icon", this.icon);
+        cv.put("short_description", this.description);
+        cv.put("category_code", this.categoryCode);
+        cv.put("category_label", this.categoryLabel);
+        cv.put("api", this.api);
+        cv.put("downloads", this.downloads);
+        cv.put("rating", this.rating);
+        cv.put("abis", TextUtils.join(",", this.abis));
+        cv.put("featured", this.featured ? 1 : 0);
+
+        return cv;
     }
 }

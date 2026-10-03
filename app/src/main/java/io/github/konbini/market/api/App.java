@@ -1,5 +1,7 @@
 package io.github.konbini.market.api;
 
+import android.content.ContentValues;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseArray;
 
@@ -135,13 +137,42 @@ public class App {
         SparseArray<AppVersion> supportedVersions = this.supportedVersions();
         Log.d("App", String.valueOf(supportedVersions.size()));
         return supportedVersions.size() > 0;
-        /*for (int j = 0; j < versions.size(); j++) {
-            AppVersion version = versions.valueAt(j);
-            if (version == null) continue;
-            if (version.isSupported()) return true;
-        }
+    }
 
-        return false;*/
+    public ContentValues toContentValues() {
+        ContentValues cv = new ContentValues();
+
+        cv.put("package_name", this.packageId);
+        cv.put("id", this.id);
+        cv.put("name", this.name);
+        cv.put("author", this.author);
+        cv.put("icon", this.icon);
+        cv.put("category_code", this.categoryId);
+        cv.put("featured", this.featured ? 1 : 0);
+        cv.put("full_description", this.description);
+
+        cv.put("screenshots", new JSONArray(this.screenshots).toString());
+        cv.put("featured", this.featured ? 1 : 0);
+
+        JSONArray versionsArray = new JSONArray();
+        try {
+            for (int j = 0; j < this.versions.size(); j++) {
+                AppVersion version = this.versions.valueAt(j);
+                JSONObject vObj = new JSONObject();
+                vObj.put("id", version.id);
+                vObj.put("versionCode", version.versionCode);
+                vObj.put("versionName", version.versionName);
+                vObj.put("minSdk", version.minSdk);
+                vObj.put("size", version.size);
+                vObj.put("downloadUrl", version.downloadUrl);
+                versionsArray.put(vObj);
+            }
+        } catch (JSONException e) {
+            Log.e("toContentValues@App", "Failed to convert versions to JSONArray: ", e);
+        }
+        cv.put("versions", versionsArray.toString());
+
+        return cv;
     }
 }
 
