@@ -52,7 +52,7 @@ public class DownloadsActivity extends Activity {
     private View loadingOverlay;
     private TextView titleView;
     private DownloadsAdapter adapter;
-    private ArrayList<RowItem> rows = new ArrayList<RowItem>();
+    private final ArrayList<RowItem> rows = new ArrayList<RowItem>();
     private LinearLayout currentDownloadsContainer;
     private TextView txtCurrentSection;
     private View currentDownloadsHeader;

@@ -22,7 +22,7 @@ public class AppVersion {
     public String versionName;
     public int minSdk;
     public int size;
-    public ArrayList<String> abis = new ArrayList<>();
+    public final ArrayList<String> abis = new ArrayList<>();
     public String downloadUrl;
 
     public AppVersion(JSONObject obj) throws JSONException {

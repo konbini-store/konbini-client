@@ -33,7 +33,7 @@ public class CategoryAppsActivity extends Activity {
     private View loadingOverlay;
     private AppListAdapter adapter;
     private final ArrayList<AppShort> items = new ArrayList<>();
-    ArrayList<AppShort> originalItems = new ArrayList<>();
+    final ArrayList<AppShort> originalItems = new ArrayList<>();
     private View promoRoot;
     private ImageView promoIcon;
     private TextView promoText;

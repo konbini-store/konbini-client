@@ -7,7 +7,7 @@ import org.json.JSONObject;
  */
 
 public class ServerMetadata {
-    private long lastUpdated;
+    private final long lastUpdated;
 
     public ServerMetadata(JSONObject response) {
         this.lastUpdated = response.optLong("lastUpdated", 0L);

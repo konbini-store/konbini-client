@@ -1,4 +1,4 @@
-package io.github.konbini.market.ui;
+package io.github.konbini.market.ui.tasks;
 
 import android.os.AsyncTask;
 import android.widget.Toast;
@@ -13,13 +13,13 @@ import io.github.konbini.market.api.AppShort;
 
 @SuppressWarnings("deprecation")
 public class LoadAppsAsyncTask extends AsyncTask<Void, Void, ArrayList<AppShort>> {
-    WeakReference<CategoryAppsActivity> ref;
+    final WeakReference<CategoryAppsActivity> ref;
 
-    String type;
-    String query;
-    boolean isGame;
-    ArrayList<Integer> appIds;
-    Api api;
+    final String type;
+    final String query;
+    final boolean isGame;
+    final ArrayList<Integer> appIds;
+    final Api api;
 
     public LoadAppsAsyncTask(CategoryAppsActivity act, String type, String query, boolean isGame,
                              ArrayList<Integer> appIds, Api api) {

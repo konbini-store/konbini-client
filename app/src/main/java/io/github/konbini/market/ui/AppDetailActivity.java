@@ -12,6 +12,7 @@ import io.github.konbini.market.db.Database;
 import io.github.konbini.market.service.DownloadService;
 import io.github.konbini.market.ui.tasks.AddReviewCommentAsyncTask;
 import io.github.konbini.market.ui.tasks.LoadDetailsAsyncTask;
+import io.github.konbini.market.ui.tasks.LoadReviewsAsyncTask;
 import io.github.konbini.market.ui.tasks.LoadScreenshotsAsyncTask;
 import io.github.konbini.market.ui.tasks.ReportReviewAsyncTask;
 import io.github.konbini.market.ui.tasks.SendReactionAsyncTask;
@@ -64,9 +65,9 @@ public class AppDetailActivity extends Activity {
     public TextView txtDownloadsInfo;
     public TextView txtReviewsInfo;
     public TextView txtHeaderRating;
-    TextView txtreviewinfo;
+    public TextView txtreviewinfo;
     public RatingBar ratingHeader;
-    RatingBar ratingAddReview;
+    public RatingBar ratingAddReview;
     private Button btnInstall;
     private Button btnOpen;
     private Button btnUninstall;
@@ -83,12 +84,12 @@ public class AppDetailActivity extends Activity {
     private View detailsScrollView, reviewsScrollView;
     private ListView listVersions;
     private Button btnTabDetails, btnTabVersions, btnTabReviews;
-    ArrayList<ReviewItem> reviews = new ArrayList<>();
-    ReviewAdapter adapter;
+    public final ArrayList<ReviewItem> reviews = new ArrayList<>();
+    public ReviewAdapter adapter;
 
     public String pkgName = "";
     private final String selectedVersion = "";
-    boolean hasOwnReview = false;
+    public boolean hasOwnReview = false;
     public String currentIconFile = "";
 
     private View loadingOverlay;
@@ -395,7 +396,7 @@ public class AppDetailActivity extends Activity {
         new LoadReviewsAsyncTask(this).execute();
     }
 
-    ReviewItem parseReview(JSONObject r) {
+    public ReviewItem parseReview(JSONObject r) {
         ReviewItem ri = new ReviewItem();
         ri.id = r.optInt("id", 0);
         ri.userId = r.optInt("user_id", 0);
@@ -683,9 +684,9 @@ public class AppDetailActivity extends Activity {
         dialog.show();
     }
 
-    static class ReviewItem {
+    public static class ReviewItem {
         int id;
-        int userId;
+        public int userId;
         String username = "User";
         String avatar = "default_avatar.png";
         int rating = 0;
@@ -697,7 +698,7 @@ public class AppDetailActivity extends Activity {
         int userReaction = 0;
     }
 
-    class ReviewAdapter extends BaseAdapter {
+    public class ReviewAdapter extends BaseAdapter {
         @Override
         public int getCount() { return reviews.size(); }
         @Override

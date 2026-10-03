@@ -119,8 +119,11 @@ public class SettingsActivity extends Activity {
 
         clearCacheButton.setOnClickListener(v -> {
             Prefs.clearCache(SettingsActivity.this);
-            Database.clearCache(SettingsActivity.this);
-            Toast.makeText(SettingsActivity.this, "Cache cleared", Toast.LENGTH_SHORT).show();
+            if (!Database.clearCache(SettingsActivity.this)) {
+               Toast.makeText(SettingsActivity.this, R.string.failed_to_delete_cache_database, Toast.LENGTH_SHORT).show();
+               return;
+            }
+            Toast.makeText(SettingsActivity.this, R.string.cache_cleared, Toast.LENGTH_SHORT).show();
         });
     }
 

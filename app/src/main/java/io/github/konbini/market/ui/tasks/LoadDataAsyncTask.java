@@ -18,10 +18,10 @@ import io.github.konbini.market.model.AppItem;
 import io.github.konbini.market.ui.CategoryListActivity;
 
 public class LoadDataAsyncTask extends AsyncTask<Void, Void, Boolean> {
-    ArrayList<CategoryListActivity.CategoryItem> outCats = new ArrayList<>();
-    ArrayList<AppItem> outApps = new ArrayList<>();
+    final ArrayList<CategoryListActivity.CategoryItem> outCats = new ArrayList<>();
+    final ArrayList<AppItem> outApps = new ArrayList<>();
 
-    WeakReference<CategoryListActivity> ref;
+    final WeakReference<CategoryListActivity> ref;
 
     public LoadDataAsyncTask(CategoryListActivity act) {
         this.ref=new WeakReference<>(act);

@@ -1,4 +1,4 @@
-package io.github.konbini.market.ui;
+package io.github.konbini.market.ui.tasks;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -13,7 +13,7 @@ import java.io.InputStream;
 // Retrieved 2026-07-08, License - CC BY-SA 4.0
 
 public class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-    private ImageView bmImage;
+    private final ImageView bmImage;
 
     public DownloadImageTask(ImageView bmImage) {
         this.bmImage = bmImage;

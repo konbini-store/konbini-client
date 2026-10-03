@@ -109,4 +109,6 @@
     <string name="social_features_not_implemented_yet">Social features not implemented yet!</string>
     <string name="logged_in_as">Logged in as %1$s</string>
     <string name="not_logged_in">Not logged in</string>
+    <string name="failed_to_delete_cache_database">Failed to delete cache database</string>
+    <string name="cache_cleared">Cache cleared</string>
 </resources>

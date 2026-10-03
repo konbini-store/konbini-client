@@ -55,11 +55,12 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+@SuppressWarnings("deprecations")
 public class MainActivity extends Activity {
 
     private ListView list;
     private AppListAdapter adapter;
-    private ArrayList<AppShort> items = new ArrayList<>();
+    private final ArrayList<AppShort> items = new ArrayList<>();
 
     private ImageButton btnSearch;
     private Button btnApps, btnGames, btnDownloads;
@@ -78,11 +79,11 @@ public class MainActivity extends Activity {
         String code;
         String label;
         boolean isGame;
-        ArrayList<AppShort> apps = new ArrayList<>();
+        final ArrayList<AppShort> apps = new ArrayList<>();
     }
 
-    private static ArrayList<AppShort> CACHE_ITEMS = new ArrayList<>();
-    private static ArrayList<AppShort> CACHE_PROMO_SOURCE = new ArrayList<>();
+    private static final ArrayList<AppShort> CACHE_ITEMS = new ArrayList<>();
+    private static final ArrayList<AppShort> CACHE_PROMO_SOURCE = new ArrayList<>();
     private static long CACHE_TIME = 0L;
 
     protected void onCreate(Bundle b) {
@@ -120,7 +121,9 @@ public class MainActivity extends Activity {
             Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/storopia.ttf");
             txtMarket.setTypeface(tf);
             txtPromoType.setTypeface(tf);
-        } catch (Exception e) { }
+        } catch (Exception e) {
+            Log.e("onCreate@MainActivity", "Failed to set fonts: ", e);
+        }
 
         adapter = new AppListAdapter(this, items);
         list.setAdapter(adapter);
@@ -140,7 +143,9 @@ public class MainActivity extends Activity {
         btnGames.setOnClickListener(v -> openCategories(true));
         btnDownloads.setOnClickListener(v -> openDownloads());
         logo.setOnClickListener(v -> {
-            try { openOptionsMenu(); } catch (Exception e) { }
+            try { openOptionsMenu(); } catch (Exception e) {
+                Log.e("onCreate@MainActivity", "Failed to open options menu: ", e);
+            }
         });
         promoMainRoot.setOnClickListener(v -> {
             if (currentPromoCategory == null) return;
@@ -151,12 +156,13 @@ public class MainActivity extends Activity {
             startActivity(i);
         });
 
-        txtMarket.setText(isRu() ? "маркет" : "market");
         try {
             int androidLogoRes = R.drawable.market_android_logo;
             ImageView iw = findViewById(R.id.imgAndroidWord);
             if (iw != null && androidLogoRes != 0) iw.setImageResource(androidLogoRes);
-        } catch (Exception e) { }
+        } catch (Exception e) {
+            Log.e("onCreate@MainActivity", "Failed to set imgAndroidWord image: ", e);
+        }
         getDatabase(this);
         if (!restoreFromCache()) {
             loadTopContent();
@@ -197,7 +203,8 @@ public class MainActivity extends Activity {
             long first = System.currentTimeMillis() + 15000L;
             am.setInexactRepeating(AlarmManager.RTC_WAKEUP, first, interval, pi);
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("scheduleUpdate@Main",
+                    "Failed to schedule update check: ", e);
         }
     }
 
@@ -242,21 +249,23 @@ public class MainActivity extends Activity {
     private void openDownloads() { startActivity(new Intent(this, DownloadsActivity.class)); }
 
     private boolean restoreFromCache() {
-        if (CACHE_ITEMS == null || CACHE_ITEMS.isEmpty()) return false;
+        if (CACHE_ITEMS.isEmpty()) return false;
         if (System.currentTimeMillis() - CACHE_TIME > 120000L) return false;
         items.clear();
         items.addAll(CACHE_ITEMS);
         adapter.refreshInstalledPackages();
         adapter.notifyDataSetChanged();
-        if (CACHE_PROMO_SOURCE != null && !CACHE_PROMO_SOURCE.isEmpty()) bindPromo(CACHE_PROMO_SOURCE);
+        if (!CACHE_PROMO_SOURCE.isEmpty()) bindPromo(CACHE_PROMO_SOURCE);
         showLoading(false);
         return true;
     }
 
+    @SuppressWarnings("deprecation")
     private void loadTopContent() {
         new LoadTopContentTask(this, api).execute();
     }
 
+    @SuppressWarnings("deprecation")
     private static class LoadTopContentTask extends AsyncTask<Void, Void, ArrayList<AppShort>> {
         private final WeakReference<MainActivity> activityRef;
         private final Api api;
@@ -317,7 +326,7 @@ public class MainActivity extends Activity {
                 banners.add(bannerUrl);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("loadBanner@MainActivity", "Failed to load a banner: ", e);
         }
         return banners;
     }
@@ -339,11 +348,11 @@ public class MainActivity extends Activity {
             }
             if (pc.apps.size() < 6) pc.apps.add(a);
         }
-        if (map.size() == 0) return;
+        if (map.isEmpty()) return;
         ArrayList<PromoCategory> cats = new ArrayList<PromoCategory>(map.values());
         currentPromoCategory = cats.get(new Random().nextInt(cats.size()));
         txtPromoType.setText(currentPromoCategory.isGame ? getString(R.string.games).toLowerCase() : getString(R.string.apps).toLowerCase());
-        txtBrowseCategory.setText((isRu() ? "����� " : "Browse ") + currentPromoCategory.label);
+        txtBrowseCategory.setText(String.format("Browse %s", currentPromoCategory.label));
 
         bindPromoIcon(promoIcon1, promoMirror1, currentPromoCategory.apps, 0);
         bindPromoIcon(promoIcon2, promoMirror2, currentPromoCategory.apps, 1);
@@ -466,7 +475,7 @@ public class MainActivity extends Activity {
                 String updateUrl = o.optString("update_url", "");
                 String notes = ru ? o.optString("notes_ru", "") : o.optString("notes_en", "");
                 PackageInfo pi = activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0);
-                if (latestCode > pi.versionCode && updateUrl != null && updateUrl.length() > 0) {
+                if (latestCode > pi.versionCode && updateUrl.length() > 0) {
                     StringBuilder msg = new StringBuilder(activity.getString(R.string.client_update_message));
                     if (latestName != null && latestName.length() > 0) {
                         msg.append("\n\n").append(activity.getString(R.string.version)).append(" ").append(latestName);
@@ -478,12 +487,10 @@ public class MainActivity extends Activity {
                     new AlertDialog.Builder(activity)
                             .setTitle(activity.getString(R.string.client_update_title))
                             .setMessage(msg.toString())
-                            .setPositiveButton(activity.getString(R.string.update_now), new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int which) {
-                                    try {
-                                        activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(finalUrl)));
-                                    } catch (Exception e) { }
-                                }
+                            .setPositiveButton(activity.getString(R.string.update_now), (dialog, which) -> {
+                                try {
+                                    activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(finalUrl)));
+                                } catch (Exception e) { }
                             })
                             .setNegativeButton(activity.getString(R.string.later), null)
                             .show();

@@ -46,8 +46,8 @@ public class CategoryListActivity extends Activity {
     private ListView list;
     private TextView titleView;
     private View loadingOverlay;
-    public ArrayList<CategoryItem> items = new ArrayList<CategoryItem>();
-    public ArrayList<AppItem> allApps = new ArrayList<AppItem>();
+    public final ArrayList<CategoryItem> items = new ArrayList<CategoryItem>();
+    public final ArrayList<AppItem> allApps = new ArrayList<AppItem>();
     public ArrayAdapter<CategoryItem> adapter;
     public boolean isGame;
     private View promoHeader;

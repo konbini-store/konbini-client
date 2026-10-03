@@ -110,4 +110,6 @@
     <string name="social_features_not_implemented_yet">Социальные функции пока не реализованы!</string>
     <string name="logged_in_as">Вошли как %1$s</string>
     <string name="not_logged_in">Не вошли</string>
+    <string name="failed_to_delete_cache_database">Не удалось удалить базу данных для кэша</string>
+    <string name="cache_cleared">Кэш очищен</string>
 </resources>

@@ -15,7 +15,7 @@ import io.github.konbini.market.ui.SearchActivity;
 public class SearchTask extends AsyncTask<Void, Void, Object> {
     private final String q;
     private String url;
-    private WeakReference<SearchActivity> ref;
+    private final WeakReference<SearchActivity> ref;
 
     public SearchTask(SearchActivity act, String q) {
         this.ref = new WeakReference<>(act);

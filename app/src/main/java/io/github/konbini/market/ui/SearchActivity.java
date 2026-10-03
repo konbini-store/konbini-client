@@ -28,7 +28,7 @@ public class SearchActivity extends Activity {
     private ImageButton btn;
     private ListView list;
     private View loadingOverlay;
-    public ArrayList<AppShort> data = new ArrayList<>();
+    public final ArrayList<AppShort> data = new ArrayList<>();
     public AppListAdapter adapter;
     private SearchTask searchTask;
 

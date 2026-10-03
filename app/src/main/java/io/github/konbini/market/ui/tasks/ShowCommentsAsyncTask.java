@@ -15,7 +15,7 @@ import io.github.konbini.market.ui.LoginActivity;
 import io.github.konbini.market.util.Prefs;
 
 public class ShowCommentsAsyncTask extends AsyncTask<Void, Void, Object> {
-    private WeakReference<AppDetailActivity> context;
+    private final WeakReference<AppDetailActivity> context;
     private final int reviewId;
 
     public ShowCommentsAsyncTask(AppDetailActivity context, int reviewId) {

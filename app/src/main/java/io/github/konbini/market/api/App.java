@@ -23,7 +23,7 @@ public class App {
     public String icon;
     public ArrayList<String> screenshots = new ArrayList<>();
     public String description;
-    public SparseArray<AppVersion> versions = new SparseArray<>();
+    public final SparseArray<AppVersion> versions = new SparseArray<>();
     public String categoryId;
     public boolean fullApp;
     public boolean featured;

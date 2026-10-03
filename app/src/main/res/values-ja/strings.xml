@@ -108,6 +108,8 @@
     <string name="social_features_not_implemented_yet">ソーシャル機能はまだ実装されていません！</string>
     <string name="logged_in_as">%1$sとしてログインしました</string>
     <string name="not_logged_in">ログインしていません</string>
+    <string name="failed_to_delete_cache_database">キャッシュデータベースの削除に失敗しました</string>
+    <string name="cache_cleared">キャッシュがクリアされました</string>
 
 
 </resources>
