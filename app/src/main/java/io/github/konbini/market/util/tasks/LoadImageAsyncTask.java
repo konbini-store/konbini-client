@@ -1,11 +1,10 @@
-package io.github.konbini.market.ui.tasks;
+package io.github.konbini.market.util.tasks;
 
 import static io.github.konbini.market.util.ImageLoader.decodeSampled;
 import static io.github.konbini.market.util.ImageLoader.memPut;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
-import android.media.Image;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.ImageView;

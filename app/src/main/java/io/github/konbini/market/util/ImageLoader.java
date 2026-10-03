@@ -3,8 +3,9 @@ package io.github.konbini.market.util;
 import java.io.File;
 import java.util.LinkedHashMap;
 
-import io.github.konbini.market.ui.tasks.LoadImageAsyncTask;
+import io.github.konbini.market.util.tasks.LoadImageAsyncTask;
 import io.github.konbini.market.util.tasks.LoadBannerAsyncTask;
+import io.github.konbini.market.util.tasks.LoadScreenshotAsyncTask;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -209,7 +210,7 @@ public class ImageLoader {
         new LoadScreenshotAsyncTask(c, url, reqW, reqH, f, iv, placeholderRes).execute();
     }
 
-    static void applyScreenshotBitmap(Context c, ImageView iv, Bitmap bmp) {
+    public static void applyScreenshotBitmap(Context c, ImageView iv, Bitmap bmp) {
         if (bmp == null) return;
         int bmpW = bmp.getWidth();
         int bmpH = bmp.getHeight();

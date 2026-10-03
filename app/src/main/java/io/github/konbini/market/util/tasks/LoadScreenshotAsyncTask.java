@@ -1,4 +1,4 @@
-package io.github.konbini.market.util;
+package io.github.konbini.market.util.tasks;
 
 import static io.github.konbini.market.util.ImageLoader.applyScreenshotBitmap;
 import static io.github.konbini.market.util.ImageLoader.decodeSampled;

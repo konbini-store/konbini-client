@@ -16,7 +16,8 @@
         android:layout_height="50dp"
         android:importantForAccessibility="no"
         android:scaleType="fitCenter"
-        android:src="@drawable/icon_placeholder" />
+        android:src="@drawable/icon_placeholder"
+        tools:ignore="UnusedAttribute" />
 
     <LinearLayout
         android:layout_width="match_parent"
