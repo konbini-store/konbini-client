@@ -1,7 +1,6 @@
 package io.github.konbini.market.api;
 
 import android.content.ContentValues;
-import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseArray;
 

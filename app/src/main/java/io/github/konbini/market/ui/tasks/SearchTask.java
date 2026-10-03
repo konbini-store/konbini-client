@@ -34,7 +34,7 @@ public class SearchTask extends AsyncTask<Void, Void, Object> {
                     .searchApps(context, q);
             return out == null ? "Unable to load app catalog" : out;
         } catch (Exception e) {
-            return "URL=" + url + "\n" + e;
+            return e.toString();
         }
     }
 

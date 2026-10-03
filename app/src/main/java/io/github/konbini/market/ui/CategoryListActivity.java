@@ -15,6 +15,7 @@ import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,13 +38,11 @@ public class CategoryListActivity extends Activity {
     }
 
     private ListView list;
-    private TextView titleView;
     private View loadingOverlay;
     public final ArrayList<CategoryItem> items = new ArrayList<>();
     public final ArrayList<AppItem> allApps = new ArrayList<>();
     public ArrayAdapter<CategoryItem> adapter;
     public boolean isGame;
-    private View promoHeader;
     private View promoRoot;
     private ImageView promoIcon;
     private TextView promoText;
@@ -59,7 +58,7 @@ public class CategoryListActivity extends Activity {
 
         isGame = getIntent().getBooleanExtra("is_game", false);
 
-        titleView = findViewById(R.id.txtTitle);
+        TextView titleView = findViewById(R.id.txtTitle);
         list = findViewById(R.id.list);
         loadingOverlay = findViewById(R.id.loadingOverlay);
 
@@ -83,29 +82,29 @@ public class CategoryListActivity extends Activity {
             try {
                 Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/storopia.ttf");
                 titleView.setTypeface(tf);
-            } catch (Exception e) { }
+            } catch (Exception e) {
+                Log.e("onCreate@CLA", "Failed to set typeface: ", e);
+            }
         }
 
         LayoutInflater inf = LayoutInflater.from(this);
-        promoHeader = inf.inflate(R.layout.view_promotion_app, list, false);
+        View promoHeader = inf.inflate(R.layout.view_promotion_app, list, false);
         promoRoot = promoHeader.findViewById(R.id.promoRoot);
-        promoIcon = (ImageView) promoHeader.findViewById(R.id.promoIcon);
-        promoText = (TextView) promoHeader.findViewById(R.id.promoText);
-        promoAppName = (TextView) promoHeader.findViewById(R.id.appName);
+        promoIcon = promoHeader.findViewById(R.id.promoIcon);
+        promoText = promoHeader.findViewById(R.id.promoText);
+        promoAppName = promoHeader.findViewById(R.id.appName);
         if (promoRoot != null) {
             promoRoot.setVisibility(View.GONE);
-            promoRoot.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    if (promoApp == null) return;
-                    Intent i = new Intent(CategoryListActivity.this, AppDetailActivity.class);
-                    i.putExtra("app_id", promoApp.id);
-                    startActivity(i);
-                }
+            promoRoot.setOnClickListener(v -> {
+                if (promoApp == null) return;
+                Intent i = new Intent(CategoryListActivity.this, AppDetailActivity.class);
+                i.putExtra("app_id", promoApp.id);
+                startActivity(i);
             });
         }
         if (list != null) list.addHeaderView(promoHeader, null, false);
 
-        adapter = new ArrayAdapter<CategoryItem>(this, R.layout.list_item_category, R.id.text1, items) {
+        adapter = new ArrayAdapter<>(this, R.layout.list_item_category, R.id.text1, items) {
             final class ViewHolder {
                 TextView label;
                 TextView preview;
@@ -120,8 +119,8 @@ public class CategoryListActivity extends Activity {
                     LayoutInflater inflater = LayoutInflater.from(CategoryListActivity.this);
                     v = inflater.inflate(R.layout.list_item_category, parent, false);
                     holder = new ViewHolder();
-                    holder.label = (TextView) v.findViewById(R.id.text1);
-                    holder.preview = (TextView) v.findViewById(R.id.text2);
+                    holder.label = v.findViewById(R.id.text1);
+                    holder.preview = v.findViewById(R.id.text2);
                     v.setTag(holder);
                 } else {
                     holder = (ViewHolder) v.getTag();
@@ -142,25 +141,23 @@ public class CategoryListActivity extends Activity {
         };
         if (list != null) {
             list.setAdapter(adapter);
-            list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    int idx = position - list.getHeaderViewsCount();
-                    if (idx < 0 || idx >= items.size()) return;
-                    CategoryItem item = items.get(idx);
-                    ArrayList<Integer> appIds = new ArrayList<>();
-                    for (AppItem app : allApps) {
-                        if (item.code.length() == 0 || item.code.equals(app.categoryCode)) {
-                            appIds.add(app.id);
-                        }
+            list.setOnItemClickListener((parent, view, position, id) -> {
+                int idx = position - list.getHeaderViewsCount();
+                if (idx < 0 || idx >= items.size()) return;
+                CategoryItem item = items.get(idx);
+                ArrayList<Integer> appIds = new ArrayList<>();
+                for (AppItem app : allApps) {
+                    if (item.code.length() == 0 || item.code.equals(app.categoryCode)) {
+                        appIds.add(app.id);
                     }
-                    Intent i = new Intent(CategoryListActivity.this, CategoryAppsActivity.class);
-                    i.putExtra("is_game", isGame);
-                    i.putExtra("type", "category");
-                    i.putExtra("query", item.code);
-                    i.putExtra("title", item.label);
-                    i.putIntegerArrayListExtra("app_ids", appIds);
-                    startActivity(i);
                 }
+                Intent i = new Intent(CategoryListActivity.this, CategoryAppsActivity.class);
+                i.putExtra("is_game", isGame);
+                i.putExtra("type", "category");
+                i.putExtra("query", item.code);
+                i.putExtra("title", item.label);
+                i.putIntegerArrayListExtra("app_ids", appIds);
+                startActivity(i);
             });
         }
         loadData();

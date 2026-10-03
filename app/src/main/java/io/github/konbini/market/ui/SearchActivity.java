@@ -1,32 +1,23 @@
 package io.github.konbini.market.ui;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import io.github.konbini.market.R;
 import io.github.konbini.market.api.AppShort;
-import io.github.konbini.market.api.Api;
 import io.github.konbini.market.ui.tasks.SearchTask;
 import io.github.konbini.market.util.LocaleHelper;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
-import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 public class SearchActivity extends Activity {
     private EditText edt;
-    private ImageButton btn;
-    private ListView list;
     private View loadingOverlay;
     public final ArrayList<AppShort> data = new ArrayList<>();
     public AppListAdapter adapter;
@@ -38,8 +29,8 @@ public class SearchActivity extends Activity {
         setContentView(R.layout.activity_search);
 
         edt = findViewById(R.id.edtQuery);
-        btn = findViewById(R.id.btnDoSearch);
-        list = findViewById(R.id.list);
+        ImageButton btn = findViewById(R.id.btnDoSearch);
+        ListView list = findViewById(R.id.list);
         loadingOverlay = findViewById(R.id.loadingOverlay);
 
         adapter = new AppListAdapter(this, data);
@@ -63,6 +54,7 @@ public class SearchActivity extends Activity {
         });
     }
 
+    @SuppressWarnings("deprecation")
     private void doSearch() {
         final String q = edt.getText().toString().trim();
         if (q.length() == 0) return;
