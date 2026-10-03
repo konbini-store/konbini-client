@@ -32,8 +32,8 @@
     <string name="reviews">レビュー</string>
     <string name="reviewsinfo">ご意見をお寄せください</string>
     <string name="screenshots">スクリーンショット</string>
-    <string name="downloads_count">ダウンロード</string>
-    <string name="reviews_count">レビュー</string>
+    <string name="downloads_count">%1$dダウンロード</string>
+    <string name="reviews_count">%1$dレビュー</string>
     <string name="download_progress">ダウンロードの進捗状況</string>
     <string name="search_hint">何を探していますか？</string>
     <string name="reloadappsettings">新しい設定を適用するには、アプリを再起動してください</string>
@@ -102,6 +102,9 @@
     <string name="about_analytics_usage">収集されたデータの利用方法は、サーバーの管理者の裁量に委ねられています。サーバーを利用する前に、そのプライバシーポリシーをよくお読みください。</string>
     <string name="clear_cache">キャッシュを消去</string>
     <string name="about_clear_cache">「コンビニ」アプリは通常、サーバーのインデックスが更新されると自動的にキャッシュを消去します。ただし、問題が発生した場合は、いつでもすぐにアプリのキャッシュを消去することができます。</string>
+    <string name="reviews_count2">レビュー (%1$d)</string>
+    <string name="app_compatible">✔ 互換性があります</string>
+    <string name="app_not_compatible">✘ 互換性がありません</string>
 
 
 </resources>

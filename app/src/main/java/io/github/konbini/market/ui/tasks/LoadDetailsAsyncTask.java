@@ -2,9 +2,11 @@ package io.github.konbini.market.ui.tasks;
 
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.text.TextUtils;
 import android.view.View;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,6 +20,7 @@ import io.github.konbini.market.ui.CategoryAppsActivity;
 import io.github.konbini.market.util.AndroidVersions;
 import io.github.konbini.market.util.ImageLoader;
 
+@SuppressWarnings("deprecation")
 public class LoadDetailsAsyncTask extends AsyncTask<Void, Void, App> {
     private final WeakReference<AppDetailActivity> context;
 
@@ -65,26 +68,31 @@ public class LoadDetailsAsyncTask extends AsyncTask<Void, Void, App> {
         activity.txtAuthor.setText(dev);
         AppVersion firstVersion = activity.app.getFirstVersion();
         AppVersion lastVersion = activity.app.getLastVersion();
-        String compatibility = "";
+        ArrayList<String> compatibilityArray = new ArrayList<>();
         if (firstVersion != null) {
             String range = firstVersion.versionName;
-            if (lastVersion != null && lastVersion.versionName != null && !lastVersion.versionName.equals(firstVersion.versionName)) {
+            if (lastVersion != null && lastVersion.versionName != null &&
+                    !lastVersion.versionName.equals(firstVersion.versionName)) {
                 range = firstVersion.versionName + " – " + lastVersion.versionName;
             }
-            compatibility += activity.getString(R.string.version) + " " + range;
+            compatibilityArray.add(activity.getString(R.string.version) + " " + range);
         }
         if (firstVersion != null) {
-            compatibility += " • Android " + AndroidVersions.apiToAndroid(firstVersion.minSdk) + " (API " + firstVersion.minSdk + ")";
+            compatibilityArray.add("Android " + AndroidVersions.apiToAndroid(firstVersion.minSdk) +
+                    " (API " + firstVersion.minSdk + ")");
         }
-        compatibility += activity.app.isSupported() ? " • Compatible" : " • Not compatible";
-        activity.txtMeta.setText(compatibility);
+        compatibilityArray.add(activity.getString(activity.app.isSupported() ?
+                R.string.app_compatible : R.string.app_not_compatible));
+
+        activity.txtMeta.setText(TextUtils.join(" • ", compatibilityArray));
         activity.txtMeta.setVisibility(View.VISIBLE);
 
         activity.txtAuthor.setOnClickListener(v -> {
             Intent intent = new Intent(activity, CategoryAppsActivity.class);
             intent.putExtra("type", "author");
             intent.putExtra("query", dev);
-            intent.putExtra("title", String.format(activity.getString(R.string.apps_made_by), o.author));
+            intent.putExtra("title", String.format(activity.getString(R.string.apps_made_by),
+                    o.author));
             activity.startActivity(intent);
         });
         if (desc.length() > 100) {
@@ -98,11 +106,11 @@ public class LoadDetailsAsyncTask extends AsyncTask<Void, Void, App> {
         } else {
             activity.txtDesc.setText(desc);
         }
-        activity.txtDownloadsInfo.setText(downloads + " " + activity.getString(R.string.downloads_count));
-        activity.txtReviewsInfo.setText(reviewCount + " " + activity.getString(R.string.reviews_count));
+        activity.txtDownloadsInfo.setText(String.format(activity.getString(R.string.downloads_count), downloads));
+        activity.txtReviewsInfo.setText(String.format(activity.getString(R.string.reviews_count), reviewCount));
         activity.txtHeaderRating.setText(String.format(Locale.US, "%.1f", avgRating));
         activity.ratingHeader.setRating(avgRating);
-        activity.txtReviewsTitle.setText(activity.getString(R.string.reviews) + " (" + reviewCount + ")");
+        activity.txtReviewsTitle.setText(String.format(activity.getString(R.string.reviews_count2), reviewCount));
 
         if (icon != null && icon.length() > 0) {
             ImageLoader.load(activity, icon, activity.imgIcon, R.drawable.icon_placeholder);

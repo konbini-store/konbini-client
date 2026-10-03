@@ -30,8 +30,8 @@
     <string name="reviews">Отзывы</string>
     <string name="reviewsinfo">Оставьте свой отзыв</string>
     <string name="screenshots">Скриншоты</string>
-    <string name="downloads_count">Скачиваний</string>
-    <string name="reviews_count">Отзывов</string>
+    <string name="downloads_count">%1$d скачиваний</string>
+    <string name="reviews_count">%1$d отзывов</string>
     <string name="download_progress">Прогресс загрузки</string>
     <string name="search_hint">Введите название приложения</string>
     <string name="reloadappsettings">Чтобы новые настройки вступили в силу, перезайдите в приложение</string>
@@ -97,4 +97,14 @@
     <string name="profile_btn">Профиль</string>
     <string name="like_btn">Лайк (%d)</string>
     <string name="dislike_btn">Дизлайк (%d)</string>
+    <string name="social_server">Социальный сервер</string>
+    <string name="about_social_servers">Социальные серверы обеспечивают работу таких социальных функций, как отзывы, учетные записи, рейтинги (вместо раздела «Рекомендуемые приложения»), аналитика и т. д.</string>
+    <string name="share_analytics">Делиться аналитическими данными</string>
+    <string name="about_analytics">Аналитические данные включают информацию о вашем устройстве, а также информацию о загружаемых вами приложениях.</string>
+    <string name="about_analytics_usage">Решение о том, как будут использоваться собранные данные, принимается администратором (администраторами) сервера. Перед использованием сервера вам следует ознакомиться с его политикой конфиденциальности.</string>
+    <string name="clear_cache">Очистить кэш</string>
+    <string name="about_clear_cache">Обычно Konbini автоматически очищает кэш при обновлении индекса сервера. Однако, если у вас возникнут какие-либо проблемы, вы всегда можете очистить кэш приложения прямо сейчас.</string>
+    <string name="reviews_count2">Отзывы ($1%d)</string>
+    <string name="app_compatible">✔ Совместимо</string>
+    <string name="app_not_compatible">✘ Не совместимо</string>
 </resources>

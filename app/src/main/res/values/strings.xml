@@ -32,8 +32,8 @@
     <string name="reviews">Reviews</string>
     <string name="reviewsinfo">Leave your feedback</string>
     <string name="screenshots">Screenshots</string>
-    <string name="downloads_count">Downloads</string>
-    <string name="reviews_count">Reviews</string>
+    <string name="downloads_count">%1$d downloads</string>
+    <string name="reviews_count">%1$d reviews</string>
     <string name="download_progress">Download progress</string>
     <string name="search_hint">Enter app name</string>
     <string name="reloadappsettings">To apply the new settings, restart the app</string>
@@ -103,4 +103,7 @@
     <string name="about_analytics_usage">How the collected data is used is at the discretion of the server\'s maintainer(s). You should read the server\'s privacy policy before using it.</string>
     <string name="clear_cache">Clear cache</string>
     <string name="about_clear_cache">Usually Konbini automatically clears cache when the server\'s index updates. However, if you encounter any issues, you can always clear the app\'s cache right now.</string>
+    <string name="reviews_count2">Reviews (%1$d)</string>
+    <string name="app_compatible">✔ Compatible</string>
+    <string name="app_not_compatible">✘ Not compatible</string>
 </resources>
