@@ -1,18 +1,16 @@
 package io.github.konbini.market.util;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.util.Base64;
 import android.util.Log;
 
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.Locale;
-import java.util.Set;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+@SuppressLint("ApplySharedPref")
 public class Prefs {
     private static final String P = "konbini_prefs";
     private static final String CACHE_PREFS = "api_response_cache";
@@ -99,10 +97,10 @@ public class Prefs {
         int userId = getUserId(c);
         if (userId <= 0) return "";
         String authKey = sp(c).getString("auth_key", "");
-        if (authKey == null || authKey.length() == 0) return "";
+        if (authKey.length() == 0) return "";
 
         String token = buildAuthToken(userId, getUsername(c), "default_avatar.png", 0, authKey);
-        if (token != null && token.length() > 0) {
+        if (token.length() > 0) {
             sp(c).edit().putString("auth_token", token).commit();
         }
         return token;
@@ -128,7 +126,7 @@ public class Prefs {
             SecretKeySpec key = new SecretKeySpec(AUTH_SECRET.getBytes("UTF-8"), "HmacSHA256");
             mac.init(key);
             byte[] sig = mac.doFinal(payload.getBytes("UTF-8"));
-            String b64 = Base64.encodeToString(payload.getBytes("UTF-8"), Base64.NO_WRAP);
+            String b64 = Base64Compat.encode(payload.getBytes("UTF-8"));
             return b64 + "." + toHex(sig);
         } catch (Exception e) {
             return "";

@@ -22,7 +22,6 @@ public class GestureImageView extends ImageView {
     private int mode = NONE;
 
     private float minScale = 1f;
-    private float maxScale = 5f;
     private float saveScale = 1f;
     private int origWidth, origHeight;
     private int viewWidth, viewHeight;
@@ -119,6 +118,7 @@ public class GestureImageView extends ImageView {
 
     private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
         @Override
+        @SuppressWarnings("NullableProblems")
         public boolean onScaleBegin(ScaleGestureDetector detector) {
             mode = ZOOM;
             return true;
@@ -129,6 +129,7 @@ public class GestureImageView extends ImageView {
             float scaleFactor = detector.getScaleFactor();
             float origScale = saveScale;
             saveScale *= scaleFactor;
+            float maxScale = 5f;
             if (saveScale > maxScale) {
                 saveScale = maxScale;
                 scaleFactor = maxScale / origScale;
@@ -154,13 +155,15 @@ public class GestureImageView extends ImageView {
 
     private class GestureListener extends GestureDetector.SimpleOnGestureListener {
         @Override
-        public boolean onDown(MotionEvent e) {
+        @SuppressWarnings("NullableProblems")
+        public boolean onDown(MotionEvent ignored) {
             mode = DRAG;
             savedMatrix.set(matrix);
             return true;
         }
 
         @Override
+        @SuppressWarnings("NullableProblems")
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
             if (mode == ZOOM) return false;
             
@@ -174,6 +177,7 @@ public class GestureImageView extends ImageView {
         }
 
         @Override
+        @SuppressWarnings("NullableProblems")
         public boolean onDoubleTap(MotionEvent e) {
             if (saveScale == minScale) {
                 saveScale = minScale * 2f;
