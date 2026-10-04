@@ -17,6 +17,7 @@ import io.github.konbini.market.api.Api;
 
 import io.github.konbini.market.net.Http;
 import io.github.konbini.market.service.UpdateCheckService;
+import io.github.konbini.market.ui.tasks.LoadBannersAsyncTask;
 import io.github.konbini.market.util.ImageLoader;
 import io.github.konbini.market.util.LocaleHelper;
 import io.github.konbini.market.util.Prefs;
@@ -67,11 +68,12 @@ public class MainActivity extends Activity {
     private TextView txtSection, txtMarket, txtPromoType, txtBrowseCategory;
     private View loadingOverlay, promoMainRoot;
     private ImageButton logo;
-    private ImageView promoIcon1, promoIcon2, promoIcon3, bannerImage;
-    private ImageView promoMirror1, promoMirror2, promoMirror3;
+//    private ImageView promoIcon1, promoIcon2, promoIcon3;
+    public ImageView bannerImage;
+//    private ImageView promoMirror1, promoMirror2, promoMirror3;
     private PromoCategory currentPromoCategory;
 
-    private Api api;
+    public Api api;
 
     private String supportedAbis;
 
@@ -102,16 +104,16 @@ public class MainActivity extends Activity {
         txtMarket = (TextView) findViewById(R.id.txtMarket);
 
         View header = getLayoutInflater().inflate(R.layout.main_list_header, list, false);
-        promoMainRoot = header.findViewById(R.id.promoMainRoot);
-//        bannerImage = (ImageView) header.findViewById(R.id.bannerImage);
-        promoIcon1 = (ImageView) header.findViewById(R.id.promoIcon1);
-        promoIcon2 = (ImageView) header.findViewById(R.id.promoIcon2);
-        promoIcon3 = (ImageView) header.findViewById(R.id.promoIcon3);
-        promoMirror1 = (ImageView) header.findViewById(R.id.promoMirror1);
-        promoMirror2 = (ImageView) header.findViewById(R.id.promoMirror2);
-        promoMirror3 = (ImageView) header.findViewById(R.id.promoMirror3);
-        txtPromoType = (TextView) header.findViewById(R.id.txtPromoType);
-        txtBrowseCategory = (TextView) header.findViewById(R.id.txtBrowseCategory);
+//        promoMainRoot = header.findViewById(R.id.promoMainRoot);
+        bannerImage = (ImageView) header.findViewById(R.id.promoBannerImage);
+//        promoIcon1 = (ImageView) header.findViewById(R.id.promoIcon1);
+//        promoIcon2 = (ImageView) header.findViewById(R.id.promoIcon2);
+//        promoIcon3 = (ImageView) header.findViewById(R.id.promoIcon3);
+//        promoMirror1 = (ImageView) header.findViewById(R.id.promoMirror1);
+//        promoMirror2 = (ImageView) header.findViewById(R.id.promoMirror2);
+//        promoMirror3 = (ImageView) header.findViewById(R.id.promoMirror3);
+//        txtPromoType = (TextView) header.findViewById(R.id.txtPromoType);
+//        txtBrowseCategory = (TextView) header.findViewById(R.id.txtBrowseCategory);
         txtSection = (TextView) header.findViewById(R.id.txtSection);
         list.addHeaderView(header, null, false);
 
@@ -147,14 +149,14 @@ public class MainActivity extends Activity {
                 Log.e("onCreate@MainActivity", "Failed to open options menu: ", e);
             }
         });
-        promoMainRoot.setOnClickListener(v -> {
-            if (currentPromoCategory == null) return;
-            Intent i = new Intent(MainActivity.this, CategoryAppsActivity.class);
-            i.putExtra("category", currentPromoCategory.code);
-            i.putExtra("title", currentPromoCategory.label);
-            i.putExtra("is_game", currentPromoCategory.isGame);
-            startActivity(i);
-        });
+//        promoMainRoot.setOnClickListener(v -> {
+//            if (currentPromoCategory == null) return;
+//            Intent i = new Intent(MainActivity.this, CategoryAppsActivity.class);
+//            i.putExtra("category", currentPromoCategory.code);
+//            i.putExtra("title", currentPromoCategory.label);
+//            i.putExtra("is_game", currentPromoCategory.isGame);
+//            startActivity(i);
+//        });
 
         try {
             int androidLogoRes = R.drawable.market_android_logo;
@@ -255,7 +257,8 @@ public class MainActivity extends Activity {
         items.addAll(CACHE_ITEMS);
         adapter.refreshInstalledPackages();
         adapter.notifyDataSetChanged();
-        if (!CACHE_PROMO_SOURCE.isEmpty()) bindPromo(CACHE_PROMO_SOURCE);
+        new LoadBannersAsyncTask(this).execute();
+//        if (!CACHE_PROMO_SOURCE.isEmpty()) bindPromo(CACHE_PROMO_SOURCE);
         showLoading(false);
         return true;
     }
@@ -310,54 +313,37 @@ public class MainActivity extends Activity {
             CACHE_TIME = System.currentTimeMillis();
             activity.adapter.refreshInstalledPackages();
             activity.adapter.notifyDataSetChanged();
-            activity.bindPromo(promoSource);
+            new LoadBannersAsyncTask(activity).execute();
         }
     }
 
-    private ArrayList<String> loadBanner() {
-        ArrayList<String> banners = new ArrayList<String>();
-        try {
-            String s = Http.getString(this.api.getBaseUrl() + "/api/banners");
-            if (s == null) return banners;
-            JSONArray arr = new JSONArray(s);
-            for (int i = 0; i < arr.length(); i++) {
-                JSONObject k = arr.getJSONObject(i);
-                String bannerUrl = (String) k.get("image");
-                banners.add(bannerUrl);
-            }
-        } catch (Exception e) {
-            Log.e("loadBanner@MainActivity", "Failed to load a banner: ", e);
-        }
-        return banners;
-    }
-
-    private void bindPromo(ArrayList<AppShort> source) {
-        if (source == null || source.size() == 0) return;
-        HashMap<String, PromoCategory> map = new HashMap<String, PromoCategory>();
-        for (int i = 0; i < source.size(); i++) {
-            AppShort a = source.get(i);
-            if (a.categoryCode == null || a.categoryCode.length() == 0) continue;
-            String key = a.categoryCode;
-            PromoCategory pc = map.get(key);
-            if (pc == null) {
-                pc = new PromoCategory();
-                pc.code = a.categoryCode;
-                pc.label = a.categoryLabel;
-                pc.isGame = false;
-                map.put(key, pc);
-            }
-            if (pc.apps.size() < 6) pc.apps.add(a);
-        }
-        if (map.isEmpty()) return;
-        ArrayList<PromoCategory> cats = new ArrayList<PromoCategory>(map.values());
-        currentPromoCategory = cats.get(new Random().nextInt(cats.size()));
-        txtPromoType.setText(currentPromoCategory.isGame ? getString(R.string.games).toLowerCase() : getString(R.string.apps).toLowerCase());
-        txtBrowseCategory.setText(String.format("Browse %s", currentPromoCategory.label));
-
-        bindPromoIcon(promoIcon1, promoMirror1, currentPromoCategory.apps, 0);
-        bindPromoIcon(promoIcon2, promoMirror2, currentPromoCategory.apps, 1);
-        bindPromoIcon(promoIcon3, promoMirror3, currentPromoCategory.apps, 2);
-    }
+//    private void bindPromo(ArrayList<AppShort> source) {
+//        if (source == null || source.size() == 0) return;
+//        HashMap<String, PromoCategory> map = new HashMap<String, PromoCategory>();
+//        for (int i = 0; i < source.size(); i++) {
+//            AppShort a = source.get(i);
+//            if (a.categoryCode == null || a.categoryCode.length() == 0) continue;
+//            String key = a.categoryCode;
+//            PromoCategory pc = map.get(key);
+//            if (pc == null) {
+//                pc = new PromoCategory();
+//                pc.code = a.categoryCode;
+//                pc.label = a.categoryLabel;
+//                pc.isGame = false;
+//                map.put(key, pc);
+//            }
+//            if (pc.apps.size() < 6) pc.apps.add(a);
+//        }
+//        if (map.isEmpty()) return;
+//        ArrayList<PromoCategory> cats = new ArrayList<PromoCategory>(map.values());
+//        currentPromoCategory = cats.get(new Random().nextInt(cats.size()));
+//        txtPromoType.setText(currentPromoCategory.isGame ? getString(R.string.games).toLowerCase() : getString(R.string.apps).toLowerCase());
+//        txtBrowseCategory.setText(String.format("Browse %s", currentPromoCategory.label));
+//
+//        bindPromoIcon(promoIcon1, promoMirror1, currentPromoCategory.apps, 0);
+//        bindPromoIcon(promoIcon2, promoMirror2, currentPromoCategory.apps, 1);
+//        bindPromoIcon(promoIcon3, promoMirror3, currentPromoCategory.apps, 2);
+//    }
 
     private void bindPromoIcon(final ImageView iv, final ImageView mirror, ArrayList<AppShort> apps, int idx) {
         if (apps.size() <= idx) {
@@ -438,11 +424,13 @@ public class MainActivity extends Activity {
 
 
     // TODO
+    @SuppressWarnings("deprecation")
     private void checkClientUpdateIfNeeded() {
         final boolean ru = isRu();
         new CheckClientUpdateTask(this, ru).execute();
     }
 
+    @SuppressWarnings("deprecation")
     private static class CheckClientUpdateTask extends AsyncTask<Void, Void, JSONObject> {
         private final WeakReference<MainActivity> activityRef;
         private final boolean ru;
@@ -477,10 +465,10 @@ public class MainActivity extends Activity {
                 PackageInfo pi = activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0);
                 if (latestCode > pi.versionCode && updateUrl.length() > 0) {
                     StringBuilder msg = new StringBuilder(activity.getString(R.string.client_update_message));
-                    if (latestName != null && latestName.length() > 0) {
+                    if (latestName.length() > 0) {
                         msg.append("\n\n").append(activity.getString(R.string.version)).append(" ").append(latestName);
                     }
-                    if (notes != null && notes.length() > 0) {
+                    if (notes.length() > 0) {
                         msg.append("\n\n").append(activity.getString(R.string.client_update_note_prefix)).append(" ").append(notes);
                     }
                     final String finalUrl = updateUrl;
@@ -511,19 +499,12 @@ public class MainActivity extends Activity {
                             "\n" +
                             "Do you consent to this type of data collection? You can always change your mind later in the settings.")
 
-                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            Prefs.setAnalyticsConsent(MainActivity.this, true);
-                            sendAnalyticsIfAllowed();
-                        }
+                    .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                        Prefs.setAnalyticsConsent(MainActivity.this, true);
+                        sendAnalyticsIfAllowed();
                     })
 
-                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            Prefs.setAnalyticsConsent(MainActivity.this, false);
-                        }
-                    })
+                    .setNegativeButton(android.R.string.cancel, (dialog, which) -> Prefs.setAnalyticsConsent(MainActivity.this, false))
                     .setIcon(android.R.drawable.ic_dialog_alert)
                     .show();
 
@@ -545,6 +526,7 @@ public class MainActivity extends Activity {
         new SendAnalyticsTask(this).execute();
     }
 
+    @SuppressWarnings("deprecation")
     private static class SendAnalyticsTask extends AsyncTask<Void, Void, Void> {
         private final WeakReference<MainActivity> activityRef;
 
@@ -567,7 +549,7 @@ public class MainActivity extends Activity {
                 Log.d("sendAnalytics@Main", "About to send to "+Prefs.getSocialServer(activity) + "/api/putStats"+"...");
                 Log.d("sendAnalytics@Main", "Response: "+Http.postJson(Prefs.getSocialServer(activity) + "/api/putStats", o.toString()));
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.e("SendAnalyticsTask", "Something went wrong when trying to send analytics: ", e);
             }
             return null;
         }

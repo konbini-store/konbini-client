@@ -17,6 +17,7 @@ import java.util.List;
 
 import io.github.konbini.market.api.App;
 import io.github.konbini.market.api.AppShort;
+import io.github.konbini.market.api.Banner;
 
 public class Database {
     public static SQLiteDatabase getDatabase(Context context) {
@@ -41,7 +42,61 @@ public class Database {
                 "    cached_at INTEGER,\n" +
                 "    featured INTEGER\n" +
                 ");");
+
+        db.execSQL("CREATE TABLE IF NOT EXISTS banners (\n" +
+                "    image TEXT,\n" +
+                "    target TEXT\n" +
+                ");");
+
         return db;
+    }
+
+    /// Saves a given list of Banners into the cache database.
+    @SuppressWarnings("TryFinallyCanBeTryWithResources")
+    public static void saveBanners(Context context, List<Banner> banners) {
+        Log.d("Database", "saveBanners count: " + (banners != null ? banners.size() : 0));
+        SQLiteDatabase db = getDatabase(context);
+        try {
+            db.beginTransaction();
+            try {
+                assert banners != null;
+                for (Banner banner : banners) {
+                    db.replace("banners", null, banner.toContentValues());
+                    Log.d("Database", "Saved banner: " + banner.getImageUrl());
+                }
+                db.setTransactionSuccessful();
+            } finally {
+                db.endTransaction();
+            }
+        } finally {
+            db.close();
+        }
+    }
+
+    @SuppressWarnings("TryFinallyCanBeTryWithResources")
+    public static Banner getRandomBanner(Context context) {
+        SQLiteDatabase db = getDatabase(context);
+        try {
+            Cursor cursor = db.query("banners", null, null,
+                    null, null, null, "RANDOM()", "1");
+            try {
+                if (cursor.moveToFirst()) {
+                    int image_index = cursor.getColumnIndex("image");
+                    int target_index = cursor.getColumnIndex("target");
+                    return new Banner(
+                            cursor.getString(image_index),
+                            cursor.getString(target_index)
+                    );
+                }
+            } finally {
+                cursor.close();
+            }
+        } catch (Exception e) {
+            Log.e("getRandomBanner@DB", "Something went wrong when getting a random banner: ", e);
+        } finally {
+            db.close();
+        }
+        return null;
     }
 
     /// Saves a given list of 'short apps' into the cache database.

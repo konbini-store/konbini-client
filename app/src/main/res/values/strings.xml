@@ -111,4 +111,6 @@
     <string name="not_logged_in">Not logged in</string>
     <string name="failed_to_delete_cache_database">Failed to delete cache database</string>
     <string name="cache_cleared">Cache cleared</string>
+    <string name="third_party_website_warning">This banner links to a third-party website.\n</string>
+    <string name="warning">Warning</string>
 </resources>

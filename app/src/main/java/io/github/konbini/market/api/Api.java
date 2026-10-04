@@ -11,6 +11,7 @@ import com.loopj.android.http.*;
 
 import cz.msebera.android.httpclient.Header;
 import io.github.konbini.market.db.Database;
+import io.github.konbini.market.net.Http;
 import io.github.konbini.market.ui.ServerMetadata;
 import io.github.konbini.market.util.Prefs;
 
@@ -234,6 +235,36 @@ public class Api {
             return this.getAllApps(context);
         }
         return Database.getAppsByCategory(context, category);
+    }
+
+    public void refreshBanners(Context context) {
+        ArrayList<Banner> banners = new ArrayList<>();
+        try {
+            String s = Http.getString(getBaseUrl() + "/api/banners.json");
+            if (s == null) {
+                Log.e("refreshBanners@Api", "/api/banners.json returned null!");
+                return;
+            }
+            JSONArray arr = new JSONArray(s);
+            for (int i = 0; i < arr.length(); i++) {
+                banners.add(new Banner(arr.getJSONObject(i)));
+            }
+            Database.saveBanners(context, banners);
+        } catch (Exception e) {
+            Log.e("loadBanner@MainActivity", "Failed to refresh banners: ", e);
+        }
+    }
+
+    public Banner getRandomBanner(Context context) {
+        Banner banner = Database.getRandomBanner(context);
+        if (banner == null) {
+            refreshBanners(context);
+            banner = Database.getRandomBanner(context);
+        }
+        if (banner == null) {
+            Log.w("getRandomBanner@Api", "banner is null! probably none are available");
+        }
+        return banner;
     }
 
     @SuppressWarnings("CharsetObjectCanBeUsed")
