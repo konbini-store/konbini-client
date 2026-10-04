@@ -150,70 +150,51 @@ public class Database {
         db.close();
     }
 
-    @SuppressLint("Range")
-    @SuppressWarnings("TryFinallyCanBeTryWithResources")
     public static App getAppByPackage(Context context, String packageName) {
-        SQLiteDatabase db = getDatabase(context);
-        try {
-            Cursor cursor = db.query("apps", null, "package_name = ?",
-                    new String[]{packageName}, null, null, null);
-            try {
-                if (cursor.moveToFirst()) {
-                    String versionsStr = cursor.getString(cursor.getColumnIndex("versions"));
-                    JSONArray versions = null;
-                    if (versionsStr != null) versions = new JSONArray(versionsStr);
-                    return new App(
-                            cursor.getInt(cursor.getColumnIndex("id")),
-                            cursor.getString(cursor.getColumnIndex("name")),
-                            cursor.getString(cursor.getColumnIndex("author")),
-                            packageName,
-                            cursor.getString(cursor.getColumnIndex("full_description")),
-                            cursor.getString(cursor.getColumnIndex("icon")),
-                            new JSONArray(cursor.getString(cursor.getColumnIndex("screenshots"))),
-                            versions,
-                            cursor.getInt(cursor.getColumnIndex("featured")) != 0
-                    );
-                }
-            } finally {
-                cursor.close();
-            }
-        } catch (Exception e) {
-            Log.e("getAppByPackage@DB", "Something went wrong when getting an app by package: ", e);
-        } finally {
-            db.close();
-        }
-        return null;
+        return getAppBySelection(context, "package_name = ?", new String[]{packageName});
+    }
+
+    public static App getAppById(Context context, int id) {
+        return getAppBySelection(context, "id = ?", new String[]{String.valueOf(id)});
     }
 
     @SuppressLint("Range")
     @SuppressWarnings("TryFinallyCanBeTryWithResources")
-    public static App getAppById(Context context, int appId) {
+    public static App getAppBySelection(Context context, String selection, String[] selectionArgs) {
         SQLiteDatabase db = getDatabase(context);
         try {
-            Cursor cursor = db.query("apps", null, "id = ?",
-                    new String[]{String.valueOf(appId)}, null, null, null);
+            Cursor cursor = db.query("apps", null, selection,
+                    selectionArgs, null, null, null, "1");
             try {
                 if (cursor.moveToFirst()) {
                     String versionsStr = cursor.getString(cursor.getColumnIndex("versions"));
                     JSONArray versions = null;
                     if (versionsStr != null) versions = new JSONArray(versionsStr);
-                    return new App(
+
+                    String screenshotsStr = cursor.getString(cursor.getColumnIndex("screenshots"));
+                    JSONArray screenshots = null;
+                    if (screenshotsStr == null) {
+                        screenshots = new JSONArray();
+                    }
+                    App app = new App(
                             cursor.getInt(cursor.getColumnIndex("id")),
                             cursor.getString(cursor.getColumnIndex("name")),
                             cursor.getString(cursor.getColumnIndex("author")),
                             cursor.getString(cursor.getColumnIndex("package_name")),
                             cursor.getString(cursor.getColumnIndex("full_description")),
                             cursor.getString(cursor.getColumnIndex("icon")),
-                            new JSONArray(cursor.getString(cursor.getColumnIndex("screenshots"))),
+                            screenshots,
                             versions,
                             cursor.getInt(cursor.getColumnIndex("featured")) != 0
                     );
+                    app.fullApp = versionsStr != null && screenshotsStr != null;
+                    return app;
                 }
             } finally {
                 cursor.close();
             }
         } catch (Exception e) {
-            Log.e("getAppById@Database", "Something went wrong when getting an app by ID: ", e);
+            Log.e("getAppByPackage@DB", "Something went wrong when getting an app by package: ", e);
         } finally {
             db.close();
         }
