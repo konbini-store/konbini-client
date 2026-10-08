@@ -67,7 +67,7 @@ public final class LoadBannersAsyncTask extends AsyncTask<Void, Void, Banner> {
             String imageUrl = banner.getImageUrl();
             String targetUrl = banner.getTargetUrl();
 
-            ImageLoader.load(activity, imageUrl, activity.bannerImage, R.drawable.icon_placeholder);
+            ImageLoader.loadBanner(activity, imageUrl, activity.bannerImage, R.drawable.icon_placeholder);
 
             activity.bannerImage.post(() -> {
                 int width = activity.bannerImage.getWidth();

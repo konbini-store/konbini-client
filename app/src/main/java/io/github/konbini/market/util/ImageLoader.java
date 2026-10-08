@@ -148,7 +148,7 @@ public class ImageLoader {
             }
         }
 
-        new LoadImageAsyncTask(url, reqW, reqW, f, iv, placeholderRes).execute();
+        new LoadImageAsyncTask(url, reqW, reqH, f, iv, placeholderRes).execute();
     }
 
     @SuppressWarnings("deprecation")
@@ -167,8 +167,23 @@ public class ImageLoader {
             return;
         }
 
-        final int reqW = 1024;
-        final int reqH = 400;
+        final int reqW = 1280;
+        final int reqH = 720;
+
+        final String key = Hash.md5(url);
+        final File f = new File(iconCacheDir(c), key + ".img");
+
+        if (f.exists()) {
+            Bitmap fb = decodeSampledFile(f.getAbsolutePath(), reqW, reqH);
+            if (fb != null) {
+                memPut(url, fb);
+                Object tag = iv.getTag();
+                if (tag != null && url.equals(tag.toString())) {
+                    iv.setImageBitmap(fb);
+                }
+                return;
+            }
+        }
 
         new LoadBannerAsyncTask(url, reqW, reqH, iv, placeholderRes).execute();
     }

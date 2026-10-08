@@ -113,6 +113,6 @@
     <string name="cache_cleared">Cache cleared</string>
     <string name="third_party_website_warning">"This banner links to a third-party website. "</string>
     <string name="warning">Warning</string>
-    <string name="social_hash_warning">Warning: To distinguish you from other users, Konbini sends the SHA-256 hash of your device\'s serial number to the social server along with your review.</string>
+    <string name="social_hash_warning">Have fun! :)</string>
     <string name="versions_count">Versions (%1$d)</string>
 </resources>
