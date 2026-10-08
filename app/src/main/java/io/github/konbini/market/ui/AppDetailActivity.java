@@ -189,10 +189,10 @@ public class AppDetailActivity extends Activity {
         adapter = new ReviewAdapter();
         list.setAdapter(adapter);
 
-        list.setOnItemClickListener((parent, view, position, id) -> {
-            if (position < 0 || position >= reviews.size()) return;
-            showReviewActionsDialog(reviews.get(position));
-        });
+//        list.setOnItemClickListener((parent, view, position, id) -> {
+//            if (position < 0 || position >= reviews.size()) return;
+//            showReviewActionsDialog(reviews.get(position));
+//        });
 
         btnInstall.setOnClickListener(v -> {
             AppVersion target = getLatestSupportedVersion();
@@ -609,21 +609,21 @@ public class AppDetailActivity extends Activity {
     private void showReviewActionsDialog(final ReviewItem r) {
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_review_actions, null);
 
-        Button btnProfile = dialogView.findViewById(R.id.btnReviewProfile);
-        final Button btnLike = dialogView.findViewById(R.id.btnReviewLike);
-        final Button btnDislike = dialogView.findViewById(R.id.btnReviewDislike);
-        Button btnComments = dialogView.findViewById(R.id.btnReviewComments);
-        Button btnReport = dialogView.findViewById(R.id.btnReviewReport);
+//        Button btnProfile = dialogView.findViewById(R.id.btnReviewProfile);
+//        final Button btnLike = dialogView.findViewById(R.id.btnReviewLike);
+//        final Button btnDislike = dialogView.findViewById(R.id.btnReviewDislike);
+//        Button btnComments = dialogView.findViewById(R.id.btnReviewComments);
+//        Button btnReport = dialogView.findViewById(R.id.btnReviewReport);
 
-        btnProfile.setText(getString(R.string.profile_btn));
-        btnReport.setText(getString(R.string.report));
-
-        boolean logged = Prefs.isLoggedIn(this);
-        if (!logged) {
-            btnLike.setEnabled(false);
-            btnDislike.setEnabled(false);
-            btnReport.setEnabled(false);
-        }
+//        btnProfile.setText(getString(R.string.profile_btn));
+//        btnReport.setText(getString(R.string.report));
+//
+//        boolean logged = Prefs.isLoggedIn(this);
+//        if (!logged) {
+//            btnLike.setEnabled(false);
+//            btnDislike.setEnabled(false);
+//            btnReport.setEnabled(false);
+//        }
 
         final AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(r.username)
@@ -631,23 +631,23 @@ public class AppDetailActivity extends Activity {
                 .setNegativeButton(isRu() ? "Закрыть" : "Close", null)
                 .create();
 
-        btnProfile.setOnClickListener(v -> {
-            dialog.dismiss();
-        });
-        btnLike.setOnClickListener(v -> {
-            dialog.dismiss();
-        });
-        btnDislike.setOnClickListener(v -> {
-            dialog.dismiss();
-        });
-        btnComments.setOnClickListener(v -> {
-            dialog.dismiss();
-        });
-        btnReport.setOnClickListener(v -> {
-            dialog.dismiss();
-            // TODO
-//            reportReview(r.id);
-        });
+//        btnProfile.setOnClickListener(v -> {
+//            dialog.dismiss();
+//        });
+//        btnLike.setOnClickListener(v -> {
+//            dialog.dismiss();
+//        });
+//        btnDislike.setOnClickListener(v -> {
+//            dialog.dismiss();
+//        });
+//        btnComments.setOnClickListener(v -> {
+//            dialog.dismiss();
+//        });
+//        btnReport.setOnClickListener(v -> {
+//            dialog.dismiss();
+//            // TODO
+////            reportReview(r.id);
+//        });
 
         dialog.show();
     }
