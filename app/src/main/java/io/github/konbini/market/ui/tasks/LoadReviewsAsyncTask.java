@@ -2,6 +2,8 @@ package io.github.konbini.market.ui.tasks;
 
 import static android.view.View.GONE;
 
+import static java.lang.Double.NaN;
+
 import android.os.AsyncTask;
 import android.text.TextUtils;
 import android.util.Log;
@@ -19,6 +21,7 @@ import java.lang.ref.WeakReference;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Locale;
 
 import cz.msebera.android.httpclient.Header;
 import io.github.konbini.market.R;
@@ -33,6 +36,7 @@ public class LoadReviewsAsyncTask extends AsyncTask<Void, Void, LoadReviewsAsync
     }
 
     public static class ReviewsResult {
+        public float averageRating;
         public ArrayList<io.github.konbini.market.ui.AppDetailActivity.ReviewItem> result;
         public Integer statusCode;
     }
@@ -94,6 +98,7 @@ public class LoadReviewsAsyncTask extends AsyncTask<Void, Void, LoadReviewsAsync
                 out.add(activity.parseReview(arr.getJSONObject(i)));
             }
             result.result = out;
+            result.averageRating = (float) obj.optDouble("average");
             return result;
         } catch (Exception e) {
             Log.e("LoadReviewsAsyncTask", "Something went wrong when" +
@@ -153,10 +158,19 @@ public class LoadReviewsAsyncTask extends AsyncTask<Void, Void, LoadReviewsAsync
             }
         }
 
-        activity.txtReviewsTitle.setText(String.format(activity.getString(R.string.reviews_count2),
+        String ratingHeader = String.format(Locale.US, "%.1f ★", out.averageRating);
+
+        if (Double.isNaN(out.averageRating)) {
+            ratingHeader = "-- ★";
+        }
+
+        activity.btnTabReviews.setText(String.format(activity.getString(R.string.reviews_count2),
                 activity.reviews.size()));
-        activity.txtReviewsInfo.setText(String.format(activity.getString(R.string.reviews_count),
-                activity.reviews.size()));
+        activity.txtHeaderRating.setText(ratingHeader);
+//        activity.txtReviewsTitle.setText(String.format(activity.getString(R.string.reviews_count2),
+//                activity.reviews.size()));
+//        activity.txtReviewsInfo.setText(String.format(activity.getString(R.string.reviews_count),
+//                activity.reviews.size()));
         activity.ratingAddReview.setVisibility(activity.hasOwnReview ? GONE : View.VISIBLE);
         activity.txtreviewinfo.setVisibility(activity.hasOwnReview ? GONE : View.VISIBLE);
         activity.adapter.notifyDataSetChanged();

@@ -68,20 +68,26 @@
                         android:id="@+id/txtHeaderRating"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="0.0"
+                        android:text="0.0 ★"
                         android:textColor="#ffffff"
                         android:textStyle="bold"
                         android:layout_gravity="right" />
 
-                    <RatingBar
-                        android:id="@+id/ratingHeader"
-                        style="?android:attr/ratingBarStyleSmall"
+                    <TextView
+                        android:id="@+id/txtHeaderDownloads"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:isIndicator="true"
-                        android:numStars="5"
-                        android:rating="0"
-                        android:stepSize="0.5" />
+                        android:text="12 ⤓"/>
+
+<!--                    <RatingBar-->
+<!--                        android:id="@+id/ratingHeader"-->
+<!--                        style="?android:attr/ratingBarStyleSmall"-->
+<!--                        android:layout_width="wrap_content"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:isIndicator="true"-->
+<!--                        android:numStars="5"-->
+<!--                        android:rating="0"-->
+<!--                        android:stepSize="0.5" />-->
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
@@ -182,7 +188,6 @@
                     android:id="@+id/txtReviewsTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
                     android:background="@drawable/bg_section_header"
                     android:paddingLeft="5dp"
                     android:paddingTop="2dp"
@@ -222,6 +227,7 @@
                     android:cacheColorHint="#00000000"
                     android:divider="#e7e7e7"
                     android:dividerHeight="1dp"
+                    android:layout_marginTop="8dp"
                     android:listSelector="@drawable/bg_press_item" />
             </LinearLayout>
         </ScrollView>

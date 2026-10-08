@@ -115,4 +115,5 @@
     <string name="third_party_website_warning">Этот баннер ведет на сторонний сайт.</string>
     <string name="warning">Внимание</string>
     <string name="social_hash_warning">Внимание: Konbini отправляет хэш SHA-256 серийного номера вашего устройства вместе с вашими отзывами чтобы отличать вас от других пользователей.</string>
+    <string name="versions_count">Версии (%1$d)</string>
 </resources>

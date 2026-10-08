@@ -106,10 +106,10 @@ public class LoadDetailsAsyncTask extends AsyncTask<Void, Void, App> {
         } else {
             activity.txtDesc.setText(desc);
         }
-        activity.txtDownloadsInfo.setText(String.format(activity.getString(R.string.downloads_count), downloads));
-        activity.txtReviewsInfo.setText(String.format(activity.getString(R.string.reviews_count), reviewCount));
-        activity.txtHeaderRating.setText(String.format(Locale.US, "%.1f", avgRating));
-        activity.ratingHeader.setRating(avgRating);
+
+        activity.txtHeaderRating.setText(String.format(Locale.US, "%.1f ★", avgRating));
+        activity.txtHeaderDownloads.setText(String.format(Locale.US, activity.getString(R.string.downloads_count),
+                downloads));
         activity.txtReviewsTitle.setText(String.format(activity.getString(R.string.reviews_count2), reviewCount));
 
         if (icon != null && icon.length() > 0) {

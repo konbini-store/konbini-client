@@ -65,6 +65,8 @@ public class AppDetailActivity extends Activity {
     public TextView txtDownloadsInfo;
     public TextView txtReviewsInfo;
     public TextView txtHeaderRating;
+    public TextView txtHeaderDownloads;
+//    public TextView txtHeaderInfo;
     public TextView txtreviewinfo;
     public RatingBar ratingHeader;
     public RatingBar ratingAddReview;
@@ -83,7 +85,9 @@ public class AppDetailActivity extends Activity {
     private LinearLayout reviewsTabContainer;
     private View detailsScrollView, reviewsScrollView;
     private ListView listVersions;
-    private Button btnTabDetails, btnTabVersions, btnTabReviews;
+    private Button btnTabDetails;
+    private Button btnTabVersions;
+    public Button btnTabReviews;
     public final ArrayList<ReviewItem> reviews = new ArrayList<>();
     public ReviewAdapter adapter;
 
@@ -160,10 +164,12 @@ public class AppDetailActivity extends Activity {
         txtName = findViewById(R.id.txtName);
         txtAuthor = findViewById(R.id.txtAuthor);
         txtHeaderRating = findViewById(R.id.txtHeaderRating);
-        ratingHeader = findViewById(R.id.ratingHeader);
+        txtHeaderDownloads = findViewById(R.id.txtHeaderDownloads);
+//        txtHeaderInfo = findViewById(R.id.txtHeaderInfo);
+//        ratingHeader = findViewById(R.id.ratingHeader);
 
-        txtDownloadsInfo = header.findViewById(R.id.txtDownloadsInfo);
-        txtReviewsInfo = header.findViewById(R.id.txtReviewsInfo);
+//        txtDownloadsInfo = findViewById(R.id.txtDownloadsInfo);
+//        txtReviewsInfo = header.findViewById(R.id.txtReviewsInfo);
         txtMeta = header.findViewById(R.id.txtMeta);
         txtDesc = header.findViewById(R.id.txtDesc);
         txtToggle = header.findViewById(R.id.toggleDescriptionTextView);
@@ -362,6 +368,8 @@ public class AppDetailActivity extends Activity {
             listVersions.setAdapter(null);
             return;
         }
+        btnTabVersions.setText(String.format(getString(R.string.versions_count),
+                app.versions.size()));
         AppVersionAdapter versionsAdapter = new AppVersionAdapter(this, app.versions);
         listVersions.setAdapter(versionsAdapter);
     }
