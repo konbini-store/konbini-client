@@ -65,6 +65,10 @@ public class LoadScreenshotAsyncTask extends AsyncTask<Void, Void, Bitmap> {
     protected void onPostExecute(Bitmap bmp) {
         Context c = context.get();
         ImageView imageView = iv.get();
+        if(imageView==null){
+            Log.w("LoadScreenshotAsyncTask", "imageView is null!");
+            return;
+        }
         if (bmp != null) {
             memPut(url, bmp);
             Object tag = imageView.getTag();
