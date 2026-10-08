@@ -13,8 +13,9 @@ import android.content.Context;
 import android.util.SparseArray;
 import android.widget.TextView;
 
-import org.w3c.dom.Text;
-
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -23,29 +24,36 @@ import java.util.Locale;
 
 public class AppVersionAdapter extends BaseAdapter {
 
-    private final Context context;
-    private final SparseArray<AppVersion> versions;
+    private final List<AppVersion> versions = new ArrayList<>();
     private final LayoutInflater inflater;
 
-    public AppVersionAdapter(Context context, SparseArray<AppVersion> versions) {
-        this.context = context;
-        this.versions = versions;
+    public AppVersionAdapter(Context context, SparseArray<AppVersion> sparseVersions) {
         this.inflater = LayoutInflater.from(context);
+        if (sparseVersions != null) {
+            for (int i = 0; i < sparseVersions.size(); i++) {
+                AppVersion v = sparseVersions.valueAt(i);
+                if (v != null) {
+                    versions.add(v);
+                }
+            }
+            Collections.sort(versions, (v1, v2) -> Integer.compare(v2.versionCode, v1.versionCode));
+        }
     }
 
     @Override
     public int getCount() {
-        return versions != null ? versions.size() : 0;
+        return versions.size();
     }
 
     @Override
     public AppVersion getItem(int position) {
-        return versions.valueAt(position);
+        return versions.get(position);
     }
 
     @Override
     public long getItemId(int position) {
-        return versions.keyAt(position);
+        AppVersion v = getItem(position);
+        return v != null ? v.id : position;
     }
 
     private static String formatBytes(long bytes) {
@@ -81,7 +89,7 @@ public class AppVersionAdapter extends BaseAdapter {
         if (version != null) {
             // Build ABI comma-separated list string
             String abisList = "noarch";
-            if (version.abis != null && !version.abis.isEmpty()) {
+            if (!version.abis.isEmpty()) {
                 StringBuilder sb = new StringBuilder();
                 for (int j = 0; j < version.abis.size(); j++) {
                     sb.append(version.abis.get(j));
