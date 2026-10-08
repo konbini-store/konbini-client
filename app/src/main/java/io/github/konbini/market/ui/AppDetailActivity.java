@@ -2,6 +2,8 @@ package io.github.konbini.market.ui;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 import org.json.JSONObject;
 
@@ -34,6 +36,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -73,8 +76,8 @@ public class AppDetailActivity extends Activity {
     private Button btnInstall;
     private Button btnOpen;
     private Button btnUninstall;
-    public TextView txtScreensTitle;
-    public TextView txtReviewsTitle;
+    public View txtScreensTitle;
+//    public TextView txtReviewsTitle;
     private TextView txtDownloadProgress;
     public HorizontalScrollView screensScroll;
     public LinearLayout screensContainer;
@@ -165,18 +168,12 @@ public class AppDetailActivity extends Activity {
         txtAuthor = findViewById(R.id.txtAuthor);
         txtHeaderRating = findViewById(R.id.txtHeaderRating);
         txtHeaderDownloads = findViewById(R.id.txtHeaderDownloads);
-//        txtHeaderInfo = findViewById(R.id.txtHeaderInfo);
-//        ratingHeader = findViewById(R.id.ratingHeader);
-
-//        txtDownloadsInfo = findViewById(R.id.txtDownloadsInfo);
-//        txtReviewsInfo = header.findViewById(R.id.txtReviewsInfo);
         txtMeta = header.findViewById(R.id.txtMeta);
         txtDesc = header.findViewById(R.id.txtDesc);
         txtToggle = header.findViewById(R.id.toggleDescriptionTextView);
         txtScreensTitle = header.findViewById(R.id.txtScreensTitle);
         screensScroll = header.findViewById(R.id.screensScroll);
         screensContainer = header.findViewById(R.id.screensContainer);
-        txtReviewsTitle = findViewById(R.id.txtReviewsTitle);
         ratingAddReview = findViewById(R.id.ratingAddReview);
         txtreviewinfo = findViewById(R.id.txtreviewinfo);
 
@@ -664,6 +661,15 @@ public class AppDetailActivity extends Activity {
         int createdAt;
     }
 
+    // Source - https://stackoverflow.com/a/18930056
+    // Posted by Lena Bru, modified by community. See post 'Timeline' for change history
+    // Retrieved 2026-10-08, License - CC BY-SA 4.0
+
+    private String getDate(long time) {
+        return DateFormat.getMediumDateFormat(this).format(new Date(time * 1000));
+    }
+
+
     public class ReviewAdapter extends BaseAdapter {
         @Override
         public int getCount() { return reviews.size(); }
@@ -688,7 +694,7 @@ public class AppDetailActivity extends Activity {
             RatingBar rb = convertView.findViewById(R.id.ratingBarReview);
 
             txtUser.setText(r.username);
-            txtDate.setText(String.valueOf(r.createdAt));
+            txtDate.setText(getDate(r.createdAt));
             txtMetaLocal.setText("");
             txtText.setText(r.text);
             rb.setRating(r.rating);

@@ -110,7 +110,6 @@ public class LoadDetailsAsyncTask extends AsyncTask<Void, Void, App> {
         activity.txtHeaderRating.setText(String.format(Locale.US, "%.1f ★", avgRating));
         activity.txtHeaderDownloads.setText(String.format(Locale.US, activity.getString(R.string.downloads_count),
                 downloads));
-        activity.txtReviewsTitle.setText(String.format(activity.getString(R.string.reviews_count2), reviewCount));
 
         if (icon != null && icon.length() > 0) {
             ImageLoader.load(activity, icon, activity.imgIcon, R.drawable.icon_placeholder);

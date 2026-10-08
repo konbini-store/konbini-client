@@ -137,7 +137,6 @@ public class LoadReviewsAsyncTask extends AsyncTask<Void, Void, LoadReviewsAsync
         AppDetailActivity activity = ref.get();
         if (out.statusCode != 200) {
             activity.msg("Network error");
-            activity.txtReviewsTitle.setText(String.format(activity.getString(R.string.reviews_count2), 0));
             activity.txtReviewsInfo.setText(String.format(activity.getString(R.string.reviews_count), 0));
             activity.hasOwnReview = false;
             activity.ratingAddReview.setVisibility(View.VISIBLE);
@@ -150,7 +149,6 @@ public class LoadReviewsAsyncTask extends AsyncTask<Void, Void, LoadReviewsAsync
         activity.reviews.addAll(listOut);
         activity.hasOwnReview = false;
         String myUserId = getSHA256(Prefs.getUserKey(activity));
-//        int myId = Prefs.getUserId(activity);
         for (int i = 0; i < activity.reviews.size(); i++) {
             if (activity.reviews.get(i).userId.equals(myUserId) && !TextUtils.isEmpty(myUserId)) {
                 activity.hasOwnReview = true;
@@ -167,10 +165,6 @@ public class LoadReviewsAsyncTask extends AsyncTask<Void, Void, LoadReviewsAsync
         activity.btnTabReviews.setText(String.format(activity.getString(R.string.reviews_count2),
                 activity.reviews.size()));
         activity.txtHeaderRating.setText(ratingHeader);
-//        activity.txtReviewsTitle.setText(String.format(activity.getString(R.string.reviews_count2),
-//                activity.reviews.size()));
-//        activity.txtReviewsInfo.setText(String.format(activity.getString(R.string.reviews_count),
-//                activity.reviews.size()));
         activity.ratingAddReview.setVisibility(activity.hasOwnReview ? GONE : View.VISIBLE);
         activity.txtreviewinfo.setVisibility(activity.hasOwnReview ? GONE : View.VISIBLE);
         activity.adapter.notifyDataSetChanged();
