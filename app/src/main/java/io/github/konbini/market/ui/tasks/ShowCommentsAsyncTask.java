@@ -1,7 +1,6 @@
 package io.github.konbini.market.ui.tasks;
 
 import android.app.AlertDialog;
-import android.content.Intent;
 import android.os.AsyncTask;
 
 import org.json.JSONArray;
@@ -10,8 +9,6 @@ import org.json.JSONObject;
 import java.lang.ref.WeakReference;
 
 import io.github.konbini.market.ui.AppDetailActivity;
-import io.github.konbini.market.ui.LoginActivity;
-import io.github.konbini.market.util.Prefs;
 
 @SuppressWarnings("deprecation")
 public class ShowCommentsAsyncTask extends AsyncTask<Void, Void, Object> {
@@ -60,10 +57,6 @@ public class ShowCommentsAsyncTask extends AsyncTask<Void, Void, Object> {
                 .setTitle(context.isRu() ? "Комментарии" : "Comments")
                 .setItems(items, null)
                 .setPositiveButton(context.isRu() ? "Добавить" : "Add", (dialog, which) -> {
-                    if (!Prefs.isLoggedIn(context)) {
-                        context.startActivity(new Intent(context, LoginActivity.class));
-                        return;
-                    }
                     context.showAddCommentDialog(reviewId);
                 })
                 .setNegativeButton(context.isRu() ? "Закрыть" : "Close", null)

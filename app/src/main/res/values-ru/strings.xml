@@ -104,7 +104,7 @@
     <string name="about_analytics_usage">Решение о том, как будут использоваться собранные данные, принимается администратором (администраторами) сервера. Перед использованием сервера вам следует ознакомиться с его политикой конфиденциальности.</string>
     <string name="clear_cache">Очистить кэш</string>
     <string name="about_clear_cache">Обычно Konbini автоматически очищает кэш при обновлении индекса сервера. Однако, если у вас возникнут какие-либо проблемы, вы всегда можете очистить кэш приложения прямо сейчас.</string>
-    <string name="reviews_count2">Отзывы ($1%d)</string>
+    <string name="reviews_count2">Отзывы (%1$d)</string>
     <string name="app_compatible">✔ Совместимо</string>
     <string name="app_not_compatible">✘ Не совместимо</string>
     <string name="social_features_not_implemented_yet">Социальные функции пока не реализованы!</string>
@@ -112,4 +112,7 @@
     <string name="not_logged_in">Не вошли</string>
     <string name="failed_to_delete_cache_database">Не удалось удалить базу данных для кэша</string>
     <string name="cache_cleared">Кэш очищен</string>
+    <string name="third_party_website_warning">Этот баннер ведет на сторонний сайт.</string>
+    <string name="warning">Внимание</string>
+    <string name="social_hash_warning">Внимание: Konbini отправляет хэш SHA-256 серийного номера вашего устройства вместе с вашими отзывами чтобы отличать вас от других пользователей.</string>
 </resources>

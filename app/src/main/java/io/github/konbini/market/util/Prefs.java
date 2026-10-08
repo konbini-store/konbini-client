@@ -3,12 +3,17 @@ package io.github.konbini.market.util;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.text.TextUtils;
 import android.util.Log;
 
 import java.util.Locale;
+import java.util.UUID;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+
+import io.github.konbini.market.ui.AppDetailActivity;
+import io.github.konbini.market.ui.UserProfileActivity;
 
 @SuppressLint("ApplySharedPref")
 public class Prefs {
@@ -57,15 +62,43 @@ public class Prefs {
 
     // ---- AUTH ----
     public static int getUserId(Context c) {
-        return sp(c).getInt("user_id", 0);
+        return sp(c).getInt("user_id", 1337);
     }
 
     public static String getUsername(Context c) {
-        return sp(c).getString("username", "");
+        return sp(c).getString("account_username", "Konbini User #1337");
+    }
+
+    public static void setUsername(Context c, String username) {
+        if (username.length() == 0) return;
+        username = (username.length() > 32) ? username.substring(0, 32) : username;
+        sp(c).edit().putString("account_username", username).commit();
+    }
+
+    public static String getAvatar(Context context) {
+        return sp(context).getString("account_avatar_url", "http://konbini.lol/avatars/cat.png");
+    }
+
+    public static void setAvatar(Context context, String avatarUrl) {
+        sp(context).edit().putString("account_avatar_url", avatarUrl).commit();
+    }
+
+    public static String getUserKey(Context context) {
+        String key = sp(context).getString("account_user_key", "");
+        if (TextUtils.isEmpty(key)) {
+            key = refreshUserKey(context);
+        }
+        return key;
+    }
+
+    private static String refreshUserKey(Context context) {
+        String key = UUID.randomUUID().toString();
+        sp(context).edit().putString("account_user_key", key).commit();
+        return key;
     }
 
     public static boolean isLoggedIn(Context c) {
-        return getUserId(c) > 0;
+        return true;
     }
 
     public static void setAuth(Context c, int userId, String username, String authKey) {

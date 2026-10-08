@@ -398,38 +398,25 @@ public class AppDetailActivity extends Activity {
 
     public ReviewItem parseReview(JSONObject r) {
         ReviewItem ri = new ReviewItem();
-        ri.id = r.optInt("id", 0);
-        ri.userId = r.optInt("user_id", 0);
+        ri.userId = r.optString("user_id", "");
         ri.username = r.optString("username", "User");
         ri.avatar = r.optString("avatar", "default_avatar.png");
         ri.rating = r.optInt("rating", 0);
         ri.text = r.optString("comment", r.optString("text", ""));
-        ri.createdAt = r.optString("created_at", "");
-        ri.likes = r.optInt("likes", 0);
-        ri.dislikes = r.optInt("dislikes", 0);
-        ri.commentsCount = r.optInt("comments_count", 0);
-        ri.userReaction = r.optInt("user_reaction", 0);
+        ri.createdAt = r.optInt("updated_at", 0);
         return ri;
     }
 
     private void showAddReviewDialog(final int presetRating) {
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        int pad = (int) (10 * getResources().getDisplayMetrics().density);
-        layout.setPadding(pad, pad, pad, pad);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_review, null);
+        TextView lbl = dialogView.findViewById(R.id.txtReviewRating);
+        final EditText edt = dialogView.findViewById(R.id.edtReviewText);
 
-        TextView lbl = new TextView(this);
         lbl.setText(String.format(getString(R.string.rating), presetRating));
-        layout.addView(lbl);
-
-        final EditText edt = new EditText(this);
-        edt.setHint(getString(R.string.your_review));
-        edt.setMinLines(3);
-        layout.addView(edt);
 
         new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.post_review))
-                .setView(layout)
+                .setView(dialogView)
                 .setPositiveButton(getString(R.string.send_review), (dialog, which) -> {
                     String text = edt.getText().toString().trim();
                     sendReview(text, presetRating);
@@ -555,7 +542,7 @@ public class AppDetailActivity extends Activity {
         btnOpen.setVisibility(installed ? View.VISIBLE : GONE);
         btnUninstall.setText(getString(R.string.uninstall));
         btnUninstall.setVisibility(installed ? View.VISIBLE : GONE);
-        btnInstall.setText(R.string.download_action);
+        btnInstall.setText(getString(R.string.download_action));
         btnInstall.setEnabled(true);
     }
 
@@ -615,87 +602,58 @@ public class AppDetailActivity extends Activity {
     }
 
     private void showReviewActionsDialog(final ReviewItem r) {
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        int pad = (int) (10 * getResources().getDisplayMetrics().density);
-        layout.setPadding(pad, pad, pad, pad);
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_review_actions, null);
 
-        Button btnProfile = new Button(this);
-        btnProfile.setText(R.string.profile_btn);
-        layout.addView(btnProfile);
+        Button btnProfile = dialogView.findViewById(R.id.btnReviewProfile);
+        final Button btnLike = dialogView.findViewById(R.id.btnReviewLike);
+        final Button btnDislike = dialogView.findViewById(R.id.btnReviewDislike);
+        Button btnComments = dialogView.findViewById(R.id.btnReviewComments);
+        Button btnReport = dialogView.findViewById(R.id.btnReviewReport);
 
-        final Button btnLike = new Button(this);
-        btnLike.setText(String.format(getString(R.string.like_btn), r.likes));
-        layout.addView(btnLike);
-
-        final Button btnDislike = new Button(this);
-        btnDislike.setText(String.format(getString(R.string.dislike_btn), r.dislikes));
-        layout.addView(btnDislike);
-
-        Button btnComments = new Button(this);
-        btnComments.setText(getString(R.string.comments, r.commentsCount));
-        layout.addView(btnComments);
-
-        Button btnReport = new Button(this);
-        btnReport.setText(R.string.report);
-        layout.addView(btnReport);
+        btnProfile.setText(getString(R.string.profile_btn));
+        btnReport.setText(getString(R.string.report));
 
         boolean logged = Prefs.isLoggedIn(this);
         if (!logged) {
             btnLike.setEnabled(false);
             btnDislike.setEnabled(false);
             btnReport.setEnabled(false);
-        } else {
-            if (r.userReaction == 1) btnLike.setEnabled(false);
-            if (r.userReaction == -1) btnDislike.setEnabled(false);
         }
 
         final AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(r.username)
-                .setView(layout)
+                .setView(dialogView)
                 .setNegativeButton(isRu() ? "Закрыть" : "Close", null)
                 .create();
 
         btnProfile.setOnClickListener(v -> {
             dialog.dismiss();
-            if (r.userId > 0) {
-                Intent i = new Intent(AppDetailActivity.this, UserProfileActivity.class);
-                i.putExtra("user_id", r.userId);
-                startActivity(i);
-            }
         });
         btnLike.setOnClickListener(v -> {
             dialog.dismiss();
-            sendReaction(r.id, 1);
         });
         btnDislike.setOnClickListener(v -> {
             dialog.dismiss();
-            sendReaction(r.id, -1);
         });
         btnComments.setOnClickListener(v -> {
             dialog.dismiss();
-            showCommentsDialog(r.id);
         });
         btnReport.setOnClickListener(v -> {
             dialog.dismiss();
-            reportReview(r.id);
+            // TODO
+//            reportReview(r.id);
         });
 
         dialog.show();
     }
 
     public static class ReviewItem {
-        int id;
-        public int userId;
+        public String userId = "";
         String username = "User";
         String avatar = "default_avatar.png";
         int rating = 0;
         String text = "";
-        String createdAt = "";
-        int likes = 0;
-        int dislikes = 0;
-        int commentsCount = 0;
-        int userReaction = 0;
+        int createdAt;
     }
 
     public class ReviewAdapter extends BaseAdapter {
@@ -722,13 +680,13 @@ public class AppDetailActivity extends Activity {
             RatingBar rb = convertView.findViewById(R.id.ratingBarReview);
 
             txtUser.setText(r.username);
-            txtDate.setText(r.createdAt);
+            txtDate.setText(String.valueOf(r.createdAt));
             txtMetaLocal.setText("");
             txtText.setText(r.text);
             rb.setRating(r.rating);
 
             //TODO
-            ImageLoader.load(AppDetailActivity.this, "" /*Api.avatarUrl(AppDetailActivity.this, r.avatar)*/, imgUser, R.drawable.icon_placeholder);
+            ImageLoader.load(AppDetailActivity.this, r.avatar, imgUser, R.drawable.icon_placeholder);
             return convertView;
         }
     }

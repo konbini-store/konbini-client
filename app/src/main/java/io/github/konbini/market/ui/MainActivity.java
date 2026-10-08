@@ -122,7 +122,6 @@ public class MainActivity extends Activity {
         try {
             Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/storopia.ttf");
             txtMarket.setTypeface(tf);
-            txtPromoType.setTypeface(tf);
         } catch (Exception e) {
             Log.e("onCreate@MainActivity", "Failed to set fonts: ", e);
         }

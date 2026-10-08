@@ -100,7 +100,7 @@ public class LoadDetailsAsyncTask extends AsyncTask<Void, Void, App> {
             activity.txtToggle.setVisibility(View.VISIBLE);
             activity.txtToggle.setOnClickListener(v -> {
                 activity.descCollapsed = !activity.descCollapsed;
-                activity.txtToggle.setText(activity.descCollapsed ? R.string.expand_desc : R.string.collapse_desc);
+                activity.txtToggle.setText(activity.descCollapsed ? activity.getString(R.string.expand_desc) : activity.getString(R.string.collapse_desc));
                 activity.txtDesc.setText(activity.descCollapsed ? shortDesc : desc);
             });
         } else {

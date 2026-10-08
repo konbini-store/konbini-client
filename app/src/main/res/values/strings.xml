@@ -111,6 +111,7 @@
     <string name="not_logged_in">Not logged in</string>
     <string name="failed_to_delete_cache_database">Failed to delete cache database</string>
     <string name="cache_cleared">Cache cleared</string>
-    <string name="third_party_website_warning">This banner links to a third-party website.\n</string>
+    <string name="third_party_website_warning">"This banner links to a third-party website. "</string>
     <string name="warning">Warning</string>
+    <string name="social_hash_warning">Warning: To distinguish you from other users, Konbini sends the SHA-256 hash of your device\'s serial number to the social server along with your review.</string>
 </resources>

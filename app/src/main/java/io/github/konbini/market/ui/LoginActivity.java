@@ -26,8 +26,8 @@ public class LoginActivity extends Activity {
         LocaleHelper.applySavedLocale(this);
         setContentView(R.layout.activity_login);
 
-        Toast.makeText(this, R.string.social_features_not_implemented_yet, Toast.LENGTH_LONG).show();
-        this.finish();
+//        Toast.makeText(this, R.string.social_features_not_implemented_yet, Toast.LENGTH_LONG).show();
+//        this.finish();
 
         edtUser = findViewById(R.id.edtUser);
         edtPass = findViewById(R.id.edtPass);
@@ -57,7 +57,7 @@ public class LoginActivity extends Activity {
             edtUser.setText(u);
             edtPass.setText("");
         } else {
-        	txtStatus.setText(R.string.not_logged_in);
+        	txtStatus.setText(getString(R.string.not_logged_in));
         }
     }
 

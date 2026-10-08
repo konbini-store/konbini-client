@@ -46,7 +46,7 @@ public class Api {
     }
 
     public static String avatarsUrl(Context c) {
-        return baseUrl(c) + "/api/user/avatars";
+        return baseUrl(c) + "/api/avatars.json";
     }
 
     public static String userProfileUrl(Context c, int userId) {

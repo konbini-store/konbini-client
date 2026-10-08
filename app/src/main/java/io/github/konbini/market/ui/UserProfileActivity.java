@@ -40,6 +40,7 @@ public class UserProfileActivity extends Activity {
         loadProfile();
     }
 
+    @SuppressWarnings("deprecation")
     private void loadProfile() {
         final ProgressDialog pd = new ProgressDialog(this);
         pd.setMessage(getString(R.string.loading));
