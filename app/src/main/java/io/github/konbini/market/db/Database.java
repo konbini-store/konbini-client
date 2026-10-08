@@ -172,8 +172,10 @@ public class Database {
                     if (versionsStr != null) versions = new JSONArray(versionsStr);
 
                     String screenshotsStr = cursor.getString(cursor.getColumnIndex("screenshots"));
-                    JSONArray screenshots = null;
-                    if (screenshotsStr == null) {
+                    JSONArray screenshots;
+                    try {
+                        screenshots = screenshotsStr != null ? new JSONArray(screenshotsStr) : new JSONArray();
+                    } catch (Exception e) {
                         screenshots = new JSONArray();
                     }
                     App app = new App(

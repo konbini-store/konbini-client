@@ -164,6 +164,7 @@ public class App {
                 vObj.put("minSdk", version.minSdk);
                 vObj.put("size", version.size);
                 vObj.put("downloadUrl", version.downloadUrl);
+                vObj.put("abis", new JSONArray(version.abis));
                 versionsArray.put(vObj);
             }
         } catch (JSONException e) {
