@@ -11,6 +11,9 @@ Konbini is an app store for Android 1.0 and up, built for both FOSS and propriet
 Get the latest APK from the [Releases page](https://github.com/konbini-store/konbini-client/releases) and you're good to go! \
 You can also always build it yourself.
 
+### System requirements
+Right now the only requirement is an Android 1.5+ device. Note that the tablet UI is not implemented at this point.
+
 ## Building
 Build it with the latest version of Android Studio. Nothing else needed.
 
