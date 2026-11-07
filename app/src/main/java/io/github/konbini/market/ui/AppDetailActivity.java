@@ -25,7 +25,6 @@ import io.github.konbini.market.util.LocaleHelper;
 import io.github.konbini.market.util.Prefs;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -56,7 +55,7 @@ import android.widget.Toast;
 
 import static android.view.View.GONE;
 
-public class AppDetailActivity extends Activity {
+public class AppDetailActivity extends BaseActivity {
     public int appId;
 
     public ImageView imgIcon;

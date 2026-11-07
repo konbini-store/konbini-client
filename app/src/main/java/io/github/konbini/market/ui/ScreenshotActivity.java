@@ -1,6 +1,5 @@
 package io.github.konbini.market.ui;
 
-import android.app.Activity;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
@@ -10,7 +9,7 @@ import android.widget.Toast;
 
 import io.github.konbini.market.ui.tasks.LoadScreenshotFullscreenAsyncTask;
 
-public class ScreenshotActivity extends Activity {
+public class ScreenshotActivity extends BaseActivity {
     public GestureImageView gestureImageView;
     public ProgressBar progressBar;
 

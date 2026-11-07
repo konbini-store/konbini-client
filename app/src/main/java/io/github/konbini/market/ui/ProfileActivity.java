@@ -7,16 +7,13 @@ import java.util.HashMap;
 
 import io.github.konbini.market.R;
 import io.github.konbini.market.net.Api;
-import io.github.konbini.market.net.Http;
 import io.github.konbini.market.ui.tasks.LoadAvatarsThenProfileAsyncTask;
 import io.github.konbini.market.util.ImageLoader;
 import io.github.konbini.market.util.LocaleHelper;
 import io.github.konbini.market.util.Prefs;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -24,7 +21,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-public class ProfileActivity extends Activity {
+public class ProfileActivity extends BaseActivity {
 
     public ImageView imgAvatar;
     public EditText edtDesc;

@@ -4,17 +4,14 @@ import static io.github.konbini.market.db.Database.getDatabase;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Random;
-
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import io.github.konbini.market.R;
 import io.github.konbini.market.api.AppShort;
 import io.github.konbini.market.api.Api;
 
+import io.github.konbini.market.api.ClientUpdate;
 import io.github.konbini.market.net.Http;
 import io.github.konbini.market.service.UpdateCheckService;
 import io.github.konbini.market.ui.tasks.LoadBannersAsyncTask;
@@ -22,11 +19,9 @@ import io.github.konbini.market.util.ImageLoader;
 import io.github.konbini.market.util.LocaleHelper;
 import io.github.konbini.market.util.Prefs;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
@@ -45,6 +40,7 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -57,7 +53,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 @SuppressWarnings("deprecations")
-public class MainActivity extends Activity {
+public class MainActivity extends BaseActivity {
 
     private ListView list;
     private AppListAdapter adapter;
@@ -430,7 +426,7 @@ public class MainActivity extends Activity {
     }
 
     @SuppressWarnings("deprecation")
-    private static class CheckClientUpdateTask extends AsyncTask<Void, Void, JSONObject> {
+    private static class CheckClientUpdateTask extends AsyncTask<Void, Void, ClientUpdate> {
         private final WeakReference<MainActivity> activityRef;
         private final boolean ru;
 
@@ -439,17 +435,15 @@ public class MainActivity extends Activity {
             this.ru = ru;
         }
 
-        protected JSONObject doInBackground(Void... params) {
+        protected ClientUpdate doInBackground(Void... params) {
             MainActivity activity = activityRef.get();
             if (activity == null) return null;
             try {
-                String s = Http.getString(activity.api.getBaseUrl() + "/api/client-latest.json");
-                if (s == null || s.length() == 0) return null;
-                return new JSONObject(s);
+                return activity.api.getLatestVersion();
             } catch (Exception e) { return null; }
         }
 
-        protected void onPostExecute(JSONObject o) {
+        protected void onPostExecute(ClientUpdate o) {
             final MainActivity activity = activityRef.get();
             if (activity == null) return;
             if (o == null) {
@@ -457,17 +451,17 @@ public class MainActivity extends Activity {
                 return;
             }
             try {
-                int latestCode = o.optInt("version_code", 0);
-                String latestName = o.optString("version_name", "");
-                String updateUrl = o.optString("update_url", "");
-                String notes = ru ? o.optString("notes_ru", "") : o.optString("notes_en", "");
+                int latestCode = o.versionCode;
+                String latestName = o.versionName;
+                String updateUrl = o.updateUrl;
+                String notes = o.notes.get(activityRef.get());
                 PackageInfo pi = activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0);
-                if (latestCode > pi.versionCode && updateUrl.length() > 0) {
+                if (latestCode > pi.versionCode && !TextUtils.isEmpty(updateUrl)) {
                     StringBuilder msg = new StringBuilder(activity.getString(R.string.client_update_message));
-                    if (latestName.length() > 0) {
+                    if (!TextUtils.isEmpty(latestName)) {
                         msg.append("\n\n").append(activity.getString(R.string.version)).append(" ").append(latestName);
                     }
-                    if (notes.length() > 0) {
+                    if (!TextUtils.isEmpty(notes)) {
                         msg.append("\n\n").append(activity.getString(R.string.client_update_note_prefix)).append(" ").append(notes);
                     }
                     final String finalUrl = updateUrl;
@@ -476,14 +470,19 @@ public class MainActivity extends Activity {
                             .setMessage(msg.toString())
                             .setPositiveButton(activity.getString(R.string.update_now), (dialog, which) -> {
                                 try {
-                                    activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(finalUrl)));
-                                } catch (Exception e) { }
+                                    activity.startActivity(new Intent(Intent.ACTION_VIEW,
+                                            Uri.parse(finalUrl)));
+                                } catch (Exception e) {
+                                    Log.e("onPostExecute@CCUT",
+                                            "Failed to open activity: ", e);
+                                }
                             })
                             .setNegativeButton(activity.getString(R.string.later), null)
                             .show();
                 }
             } catch (Exception e) {
-                Log.e("clientUpdate", "Error checking for client update: " + e.getMessage());
+                Log.e("clientUpdate",
+                        "Error checking for client update: " + e.getMessage());
             }
         }
     }

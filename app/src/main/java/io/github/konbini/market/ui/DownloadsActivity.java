@@ -18,7 +18,6 @@ import io.github.konbini.market.service.DownloadService;
 import io.github.konbini.market.util.ImageLoader;
 import io.github.konbini.market.util.LocaleHelper;
 
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -44,7 +43,7 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class DownloadsActivity extends Activity {
+public class DownloadsActivity extends BaseActivity {
     private static final int TYPE_SECTION = 0;
     private static final int TYPE_APP = 1;
 

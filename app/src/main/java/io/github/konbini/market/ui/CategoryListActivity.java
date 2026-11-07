@@ -10,7 +10,6 @@ import io.github.konbini.market.ui.tasks.LoadDataAsyncTask;
 import io.github.konbini.market.util.ImageLoader;
 import io.github.konbini.market.util.LocaleHelper;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
@@ -19,7 +18,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -27,7 +25,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 @SuppressWarnings("deprecation")
-public class CategoryListActivity extends Activity {
+public class CategoryListActivity extends BaseActivity {
 
     public static class CategoryItem {
         public final String code;

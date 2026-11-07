@@ -7,7 +7,6 @@ import io.github.konbini.market.api.AppShort;
 import io.github.konbini.market.ui.tasks.SearchTask;
 import io.github.konbini.market.util.LocaleHelper;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -16,7 +15,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 
-public class SearchActivity extends Activity {
+public class SearchActivity extends BaseActivity {
     private EditText edt;
     private View loadingOverlay;
     public final ArrayList<AppShort> data = new ArrayList<>();

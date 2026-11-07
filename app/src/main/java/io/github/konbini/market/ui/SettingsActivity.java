@@ -5,7 +5,6 @@ import io.github.konbini.market.db.Database;
 import io.github.konbini.market.util.LocaleHelper;
 import io.github.konbini.market.util.Prefs;
 
-import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ArrayAdapter;
@@ -17,7 +16,7 @@ import android.widget.Toast;
 import java.io.DataOutputStream;
 import java.util.Locale;
 
-public class SettingsActivity extends Activity {
+public class SettingsActivity extends BaseActivity {
 
     private EditText edtServer;
     private Spinner spnLang;

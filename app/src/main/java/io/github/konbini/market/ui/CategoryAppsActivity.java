@@ -11,7 +11,6 @@ import io.github.konbini.market.ui.tasks.LoadAppsAsyncTask;
 import io.github.konbini.market.util.ImageLoader;
 import io.github.konbini.market.util.LocaleHelper;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -25,7 +24,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class CategoryAppsActivity extends Activity {
+public class CategoryAppsActivity extends BaseActivity {
     private ListView list;
     private View loadingOverlay;
     private AppListAdapter adapter;
