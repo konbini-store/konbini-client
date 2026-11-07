@@ -8,15 +8,19 @@ import org.json.JSONObject;
  */
 
 public class ClientUpdate {
-    public int latestCode;
-    public String latestName;
+    public int versionCode;
+    public String versionName;
     public String updateUrl;
-    public String notes;
+    public LocalizedObject<String> notes;
 
     public ClientUpdate(JSONObject obj) throws JSONException {
-        this.latestCode = obj.getInt("latestCode");
-        this.latestName = obj.getString("latestName");
-        this.updateUrl = obj.getString("updateUrl");
-        this.notes = obj.getString("notes");
+        this.versionCode = obj.getInt("version_code");
+        this.versionName = obj.getString("version_name");
+        this.updateUrl = obj.getString("update_url");
+        this.notes = new LocalizedObject<>();
+        if (obj.has("notes_en"))
+            this.notes.put("en", obj.getString("notes_en"));
+        if (obj.has("notes_ru"))
+            this.notes.put("ru", obj.getString("notes_ru"));
     }
 }

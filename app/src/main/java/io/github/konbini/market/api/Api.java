@@ -5,6 +5,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.loopj.android.http.*;
@@ -235,6 +236,30 @@ public class Api {
             return this.getAllApps(context);
         }
         return Database.getAppsByCategory(context, category);
+    }
+
+    public ClientUpdate getLatestVersion() {
+        String latestVersionJson;
+        try {
+            latestVersionJson =
+                    Http.getString(getBaseUrl() + "/api/client-latest.json");
+        } catch (Exception e) {
+            Log.e("getLatestVersion@Api", "Failed to get latest version: ", e);
+            return null;
+        }
+        JSONObject obj;
+        try {
+            obj = new JSONObject(latestVersionJson);
+        } catch (JSONException e) {
+            Log.e("getLatestVersion@Api", "Failed to parse latest version: ", e);
+            return null;
+        }
+        try {
+            return new ClientUpdate(obj);
+        } catch (JSONException e) {
+            Log.e("getLatestVersion@Api", "Invalid latest version JSON: ", e);
+            return null;
+        }
     }
 
     public void refreshBanners(Context context) {
