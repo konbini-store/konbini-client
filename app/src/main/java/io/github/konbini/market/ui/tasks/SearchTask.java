@@ -51,6 +51,19 @@ public class SearchTask extends AsyncTask<Void, Void, Object> {
         context.data.addAll(listOut);
         context.adapter.refreshInstalledPackages();
         context.adapter.notifyDataSetChanged();
+        new LoadRatingsAsyncTask(context, ratings -> {
+            boolean updated = false;
+            for (AppShort app : context.data) {
+                if (app.packageName != null && ratings.containsKey(app.packageName)) {
+                    Double r = ratings.get(app.packageName);
+                    if (r != null) {
+                        app.rating = r;
+                        updated = true;
+                    }
+                }
+            }
+            if (updated) context.adapter.notifyDataSetChanged();
+        }).execute();
         if (listOut.isEmpty())
             Toast.makeText(context, R.string.nothing_found, Toast.LENGTH_SHORT).show();
     }

@@ -15,6 +15,7 @@ import io.github.konbini.market.api.ClientUpdate;
 import io.github.konbini.market.net.Http;
 import io.github.konbini.market.service.UpdateCheckService;
 import io.github.konbini.market.ui.tasks.LoadBannersAsyncTask;
+import io.github.konbini.market.ui.tasks.LoadRatingsAsyncTask;
 import io.github.konbini.market.util.ImageLoader;
 import io.github.konbini.market.util.LocaleHelper;
 import io.github.konbini.market.util.Prefs;
@@ -253,6 +254,19 @@ public class MainActivity extends BaseActivity {
         adapter.refreshInstalledPackages();
         adapter.notifyDataSetChanged();
         new LoadBannersAsyncTask(this).execute();
+        new LoadRatingsAsyncTask(this, ratings -> {
+            boolean updated = false;
+            for (AppShort app : items) {
+                if (app.packageName != null && ratings.containsKey(app.packageName)) {
+                    Double r = ratings.get(app.packageName);
+                    if (r != null) {
+                        app.rating = r;
+                        updated = true;
+                    }
+                }
+            }
+            if (updated) adapter.notifyDataSetChanged();
+        }).execute();
 //        if (!CACHE_PROMO_SOURCE.isEmpty()) bindPromo(CACHE_PROMO_SOURCE);
         showLoading(false);
         return true;
@@ -309,6 +323,19 @@ public class MainActivity extends BaseActivity {
             activity.adapter.refreshInstalledPackages();
             activity.adapter.notifyDataSetChanged();
             new LoadBannersAsyncTask(activity).execute();
+            new LoadRatingsAsyncTask(activity, ratings -> {
+                boolean updated = false;
+                for (AppShort app : activity.items) {
+                    if (app.packageName != null && ratings.containsKey(app.packageName)) {
+                        Double r = ratings.get(app.packageName);
+                        if (r != null) {
+                            app.rating = r;
+                            updated = true;
+                        }
+                    }
+                }
+                if (updated) activity.adapter.notifyDataSetChanged();
+            }).execute();
         }
     }
 

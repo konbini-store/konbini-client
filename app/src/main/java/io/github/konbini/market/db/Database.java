@@ -216,7 +216,7 @@ public class Database {
                     ArrayList<String> abis = new ArrayList<>();
                     if (abisStr != null && !TextUtils.isEmpty(abisStr))
                         abis = new ArrayList<>(Arrays.asList(abisStr.split(",")));
-                    return new AppShort(
+                    AppShort appShort = new AppShort(
                             cursor.getInt(cursor.getColumnIndex("id")),
                             cursor.getString(cursor.getColumnIndex("name")),
                             cursor.getInt(cursor.getColumnIndex("api")),
@@ -229,6 +229,11 @@ public class Database {
                             cursor.getString(cursor.getColumnIndex("package_name")),
                             cursor.getInt(cursor.getColumnIndex("featured")) != 0
                     );
+                    int ratingIdx = cursor.getColumnIndex("rating");
+                    if (ratingIdx != -1) {
+                        appShort.rating = cursor.getDouble(ratingIdx);
+                    }
+                    return appShort;
                 }
             } finally {
                 cursor.close();
@@ -304,7 +309,7 @@ public class Database {
                         description = "No description provided.";
                     }
 
-                    results.add(new AppShort(
+                    AppShort appShort = new AppShort(
                             cursor.getInt(cursor.getColumnIndex("id")),
                             cursor.getString(cursor.getColumnIndex("name")),
                             cursor.getInt(cursor.getColumnIndex("api")),
@@ -316,7 +321,12 @@ public class Database {
                             cursor.getString(cursor.getColumnIndex("author")),
                             cursor.getString(cursor.getColumnIndex("package_name")),
                             cursor.getInt(cursor.getColumnIndex("featured")) != 0
-                    ));
+                    );
+                    int ratingIdx = cursor.getColumnIndex("rating");
+                    if (ratingIdx != -1) {
+                        appShort.rating = cursor.getDouble(ratingIdx);
+                    }
+                    results.add(appShort);
                     cursor.moveToNext();
                 }
             } finally {
@@ -393,5 +403,30 @@ public class Database {
     public static boolean clearCache(Context context) {
         File dbFile = new File(context.getCacheDir(), "cache.db");
         return !dbFile.exists() || dbFile.delete();
+    }
+
+    public static void updateRatings(Context context, java.util.Map<String, Double> ratingsMap) {
+        if (ratingsMap == null || ratingsMap.isEmpty()) return;
+        SQLiteDatabase db = null;
+        try {
+            db = getDatabase(context);
+            db.beginTransaction();
+            try {
+                ContentValues cv = new ContentValues();
+                for (java.util.Map.Entry<String, Double> entry : ratingsMap.entrySet()) {
+                    if (entry.getKey() == null || entry.getValue() == null) continue;
+                    cv.clear();
+                    cv.put("rating", entry.getValue());
+                    db.update("apps", cv, "package_name = ?", new String[]{entry.getKey()});
+                }
+                db.setTransactionSuccessful();
+            } finally {
+                db.endTransaction();
+            }
+        } catch (Exception e) {
+            Log.e("updateRatings@Database", "Failed to update ratings: ", e);
+        } finally {
+            if (db != null) db.close();
+        }
     }
 }

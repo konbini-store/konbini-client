@@ -59,9 +59,13 @@ public class LoadDetailsAsyncTask extends AsyncTask<Void, Void, App> {
         String icon = o.icon;
         activity.currentIconFile = icon;
 
-        int downloads = 0;
-        int reviewCount = 0;
         float avgRating = 0;
+        int downloads = 0;
+        io.github.konbini.market.api.AppShort shortApp = io.github.konbini.market.db.Database.getShortAppById(activity, activity.appId);
+        if (shortApp != null && shortApp.rating > 0) {
+            avgRating = (float) shortApp.rating;
+        }
+        int reviewCount = 0;
         activity.pkgName = o.packageId;
 
         activity.txtName.setText(name);
@@ -107,9 +111,18 @@ public class LoadDetailsAsyncTask extends AsyncTask<Void, Void, App> {
             activity.txtDesc.setText(desc);
         }
 
-        activity.txtHeaderRating.setText(String.format(Locale.US, "%.1f ★", avgRating));
+        activity.txtHeaderRating.setText(avgRating > 0 ? String.format(Locale.US, "%.1f ★", avgRating) : "-- ★");
         activity.txtHeaderDownloads.setText(String.format(Locale.US, activity.getString(R.string.downloads_count),
                 downloads));
+
+        new LoadRatingsAsyncTask(activity, ratings -> {
+            if (activity.pkgName != null && ratings.containsKey(activity.pkgName)) {
+                Double r = ratings.get(activity.pkgName);
+                if (r != null && r > 0) {
+                    activity.txtHeaderRating.setText(String.format(Locale.US, "%.1f ★", r.floatValue()));
+                }
+            }
+        }).execute();
 
         if (icon != null && icon.length() > 0) {
             ImageLoader.load(activity, icon, activity.imgIcon, R.drawable.icon_placeholder);

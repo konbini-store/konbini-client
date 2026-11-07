@@ -123,5 +123,19 @@ public class LoadDataAsyncTask extends AsyncTask<Void, Void, Boolean> {
         act.allApps.addAll(outApps);
         act.adapter.notifyDataSetChanged();
         act.bindPromotion();
+
+        new LoadRatingsAsyncTask(act, ratings -> {
+            boolean updated = false;
+            for (AppItem app : act.allApps) {
+                if (app.packageName != null && ratings.containsKey(app.packageName)) {
+                    Double r = ratings.get(app.packageName);
+                    if (r != null) {
+                        app.rating = r.floatValue();
+                        updated = true;
+                    }
+                }
+            }
+            if (updated) act.adapter.notifyDataSetChanged();
+        }).execute();
     }
 }

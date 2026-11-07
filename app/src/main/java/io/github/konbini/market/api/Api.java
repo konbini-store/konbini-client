@@ -101,6 +101,27 @@ public class Api {
         return this.base_url;
     }
 
+    public String getSocialRatingsUrl(Context context) {
+        String instance = getBaseUrl();
+        try {
+            instance = java.net.URLEncoder.encode(instance, "UTF-8");
+        } catch (Exception ignored) {}
+        return Prefs.getSocialServer(context) + "/api/ratings?instance=" + instance;
+    }
+
+    public void updateMemoryRatings(java.util.Map<String, Double> ratings) {
+        if (memoryApps != null && ratings != null) {
+            for (AppShort app : memoryApps) {
+                if (app.packageName != null && ratings.containsKey(app.packageName)) {
+                    Double r = ratings.get(app.packageName);
+                    if (r != null) {
+                        app.rating = r;
+                    }
+                }
+            }
+        }
+    }
+
     // Get featured apps
     // Isn't exactly great on memory...
     public ArrayList<AppShort> getFeaturedApps(Context context) {

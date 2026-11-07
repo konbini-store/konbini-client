@@ -70,5 +70,19 @@ public class LoadAppsAsyncTask extends AsyncTask<Void, Void, ArrayList<AppShort>
         act.bindPromotion();
         act.applySort();
         act.updateTabButtons();
+
+        new LoadRatingsAsyncTask(act, ratings -> {
+            boolean updated = false;
+            for (AppShort app : act.originalItems) {
+                if (app.packageName != null && ratings.containsKey(app.packageName)) {
+                    Double r = ratings.get(app.packageName);
+                    if (r != null) {
+                        app.rating = r;
+                        updated = true;
+                    }
+                }
+            }
+            if (updated) act.applySort();
+        }).execute();
     }
 }
