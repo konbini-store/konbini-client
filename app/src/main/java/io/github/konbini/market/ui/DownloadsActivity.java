@@ -18,6 +18,7 @@ import io.github.konbini.market.service.DownloadService;
 import io.github.konbini.market.util.ImageLoader;
 import io.github.konbini.market.util.LocaleHelper;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -140,9 +141,15 @@ public class DownloadsActivity extends BaseActivity {
         loadInstalledMarketApps();
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     protected void onResume() {
         super.onResume();
-        registerReceiver(dlReceiver, new IntentFilter(DownloadService.ACTION_PROGRESS));
+        IntentFilter filter = new IntentFilter(DownloadService.ACTION_PROGRESS);
+        if (Build.VERSION.SDK_INT >= 33) {
+            registerReceiver(dlReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(dlReceiver, filter);
+        }
         refreshCurrentDownloads();
         if (adapter != null) adapter.notifyDataSetChanged();
         if (rows.isEmpty()) loadInstalledMarketApps();
