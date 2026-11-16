@@ -5,12 +5,15 @@ import static io.github.konbini.market.db.Database.getDatabase;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Objects;
+
 import org.json.JSONObject;
 
 import io.github.konbini.market.R;
 import io.github.konbini.market.api.AppShort;
 import io.github.konbini.market.api.Api;
 
+import io.github.konbini.market.api.Banner;
 import io.github.konbini.market.api.ClientUpdate;
 import io.github.konbini.market.net.Http;
 import io.github.konbini.market.service.UpdateCheckService;
@@ -20,9 +23,11 @@ import io.github.konbini.market.util.ImageLoader;
 import io.github.konbini.market.util.LocaleHelper;
 import io.github.konbini.market.util.Prefs;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
@@ -41,6 +46,8 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
@@ -69,6 +76,9 @@ public class MainActivity extends BaseActivity {
     public ImageView bannerImage;
 //    private ImageView promoMirror1, promoMirror2, promoMirror3;
     private PromoCategory currentPromoCategory;
+    private static boolean showedUpdatePopup = false;
+    private static Banner CACHE_BANNER = null;
+    private static long BANNER_CACHE_TIME = 0L;
 
     public Api api;
 
@@ -84,6 +94,17 @@ public class MainActivity extends BaseActivity {
     private static final ArrayList<AppShort> CACHE_ITEMS = new ArrayList<>();
     private static final ArrayList<AppShort> CACHE_PROMO_SOURCE = new ArrayList<>();
     private static long CACHE_TIME = 0L;
+
+    private final Handler bannerHandler = new Handler(Looper.getMainLooper());
+    private final Runnable bannerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            // Fetch a new banner
+            new LoadBannersAsyncTask(MainActivity.this).execute();
+            // Schedule the next fetch (e.g., every 5 minutes = 300,000 ms)
+            bannerHandler.postDelayed(this, 10000L);
+        }
+    };
 
     protected void onCreate(Bundle b) {
         super.onCreate(b);
@@ -210,6 +231,14 @@ public class MainActivity extends BaseActivity {
         super.onResume();
         adapter.refreshInstalledPackages();
         adapter.notifyDataSetChanged();
+
+        bannerHandler.postDelayed(bannerRunnable, 10000L);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        bannerHandler.removeCallbacks(bannerRunnable);
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -246,6 +275,56 @@ public class MainActivity extends BaseActivity {
 
     private void openDownloads() { startActivity(new Intent(this, DownloadsActivity.class)); }
 
+    // Helper method to open the URL safely
+    private void launchIntent(Activity activity, Uri uri, boolean isInternal) {
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+            if (isInternal) {
+                intent.setPackage(activity.getPackageName());
+            }
+
+            activity.startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            Log.e("LoadBannersAsyncTask", "No app available to handle URL: " + uri, e);
+            Toast.makeText(activity, "Failed to open :(", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e("LoadBannersAsyncTask", "Failed to open target URL: ", e);
+        }
+    }
+
+    public void displayBanner(Banner banner) {
+        String imageUrl = banner.getImageUrl();
+        String targetUrl = banner.getTargetUrl();
+
+        ImageLoader.loadBanner(this, imageUrl, this.bannerImage, R.drawable.icon_placeholder);
+
+        this.bannerImage.post(() -> {
+            int width = this.bannerImage.getWidth();
+            if (width > 0) {
+                android.view.ViewGroup.LayoutParams params =
+                        this.bannerImage.getLayoutParams();
+                params.height = Math.round(width * (9.0f / 16.0f));
+                this.bannerImage.setLayoutParams(params);
+            }
+        });
+
+        this.bannerImage.setOnClickListener(v -> {
+            final Uri uri = Uri.parse(targetUrl);
+            if (!Objects.equals(uri.getScheme(), "konbini")) {
+                new AlertDialog.Builder(this)
+                        .setTitle(R.string.warning)
+                        .setMessage(R.string.third_party_website_warning)
+                        .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                            launchIntent(this, uri, false);
+                        })
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show();
+            } else {
+                launchIntent(this, uri, true);
+            }
+        });
+    }
+
     private boolean restoreFromCache() {
         if (CACHE_ITEMS.isEmpty()) return false;
         if (System.currentTimeMillis() - CACHE_TIME > 120000L) return false;
@@ -253,7 +332,11 @@ public class MainActivity extends BaseActivity {
         items.addAll(CACHE_ITEMS);
         adapter.refreshInstalledPackages();
         adapter.notifyDataSetChanged();
-        new LoadBannersAsyncTask(this).execute();
+        if (CACHE_BANNER != null && System.currentTimeMillis() - BANNER_CACHE_TIME < 10000L) {
+            displayBanner(CACHE_BANNER);
+        } else {
+            new LoadBannersAsyncTask(this).execute();
+        }
         new LoadRatingsAsyncTask(this, ratings -> {
             boolean updated = false;
             for (AppShort app : items) {
@@ -448,8 +531,10 @@ public class MainActivity extends BaseActivity {
     // TODO
     @SuppressWarnings("deprecation")
     private void checkClientUpdateIfNeeded() {
+        if (showedUpdatePopup) return;
         final boolean ru = isRu();
         new CheckClientUpdateTask(this, ru).execute();
+        showedUpdatePopup = true;
     }
 
     @SuppressWarnings("deprecation")

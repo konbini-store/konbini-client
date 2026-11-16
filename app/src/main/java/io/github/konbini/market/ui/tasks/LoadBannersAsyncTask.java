@@ -39,23 +39,6 @@ public final class LoadBannersAsyncTask extends AsyncTask<Void, Void, Banner> {
         }
     }
 
-    // Helper method to open the URL safely
-    private void launchIntent(Activity activity, Uri uri, boolean isInternal) {
-        try {
-            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-            if (isInternal) {
-                intent.setPackage(activity.getPackageName());
-            }
-
-            activity.startActivity(intent);
-        } catch (ActivityNotFoundException e) {
-            Log.e("LoadBannersAsyncTask", "No app available to handle URL: " + uri, e);
-            Toast.makeText(activity, "Failed to open :(", Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            Log.e("LoadBannersAsyncTask", "Failed to open target URL: ", e);
-        }
-    }
-
     protected void onPostExecute(Banner banner) {
         final MainActivity activity = activityRef.get();
         if (activity == null) return;
@@ -64,36 +47,7 @@ public final class LoadBannersAsyncTask extends AsyncTask<Void, Void, Banner> {
             return;
         }
         try {
-            String imageUrl = banner.getImageUrl();
-            String targetUrl = banner.getTargetUrl();
-
-            ImageLoader.loadBanner(activity, imageUrl, activity.bannerImage, R.drawable.icon_placeholder);
-
-            activity.bannerImage.post(() -> {
-                int width = activity.bannerImage.getWidth();
-                if (width > 0) {
-                    android.view.ViewGroup.LayoutParams params =
-                            activity.bannerImage.getLayoutParams();
-                    params.height = Math.round(width * (9.0f / 16.0f));
-                    activity.bannerImage.setLayoutParams(params);
-                }
-            });
-
-            activity.bannerImage.setOnClickListener(v -> {
-                final Uri uri = Uri.parse(targetUrl);
-                if (!Objects.equals(uri.getScheme(), "konbini")) {
-                    new AlertDialog.Builder(activity)
-                            .setTitle(R.string.warning)
-                            .setMessage(R.string.third_party_website_warning)
-                            .setPositiveButton(android.R.string.ok, (dialog, which) -> {
-                                launchIntent(activity, uri, false);
-                            })
-                            .setNegativeButton(android.R.string.cancel, null)
-                            .show();
-                } else {
-                    launchIntent(activity, uri, true);
-                }
-            });
+            activity.displayBanner(banner);
         } catch (Exception e) {
             Log.e("LoadBannersAsyncTask", "Error loading banners: " + e.getMessage());
         }
