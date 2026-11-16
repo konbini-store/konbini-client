@@ -110,14 +110,12 @@ public class Api {
     }
 
     public void updateMemoryRatings(java.util.Map<String, Double> ratings) {
-        if (memoryApps != null && ratings != null) {
-            for (AppShort app : memoryApps) {
-                if (app.packageName != null && ratings.containsKey(app.packageName)) {
-                    Double r = ratings.get(app.packageName);
-                    if (r != null) {
-                        app.rating = r;
-                    }
-                }
+        if (memoryApps == null || ratings == null) return;
+        for (AppShort app : memoryApps) {
+            if (app.packageName == null || !ratings.containsKey(app.packageName)) continue;
+            Double r = ratings.get(app.packageName);
+            if (r != null) {
+                app.rating = r;
             }
         }
     }
