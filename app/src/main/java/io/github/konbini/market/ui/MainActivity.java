@@ -481,7 +481,7 @@ public class MainActivity extends BaseActivity {
                 int latestCode = o.versionCode;
                 String latestName = o.versionName;
                 String updateUrl = o.updateUrl;
-                String notes = o.notes.get(activityRef.get());
+                String notes = o.notes.getLocalizedString();
                 PackageInfo pi = activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0);
                 if (latestCode > pi.versionCode && !TextUtils.isEmpty(updateUrl)) {
                     StringBuilder msg = new StringBuilder(activity.getString(R.string.client_update_message));
