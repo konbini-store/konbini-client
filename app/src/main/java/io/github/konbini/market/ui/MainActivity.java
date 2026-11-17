@@ -240,7 +240,7 @@ public class MainActivity extends BaseActivity {
             if (width > 0) {
                 android.view.ViewGroup.LayoutParams params =
                         this.bannerImage.getLayoutParams();
-                params.height = Math.round(width * (9.0f / 16.0f));
+                params.height = Math.round(width * (1.0f / 2.0f));
                 this.bannerImage.setLayoutParams(params);
             }
         });
