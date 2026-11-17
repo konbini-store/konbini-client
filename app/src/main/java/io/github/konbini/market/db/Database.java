@@ -256,7 +256,6 @@ public class Database {
         String selection = "featured != 0";
         Log.d("Database", "getFeaturedApps called");
         ArrayList<AppShort> result = getAppsBySelection(context, selection, null);
-        ArrayList<AppShort> allApps = getAllApps(context);
 
         Log.e("Database", result != null ? result.toString() : "null");
         return result;
@@ -405,6 +404,7 @@ public class Database {
         return !dbFile.exists() || dbFile.delete();
     }
 
+    @SuppressWarnings("TryFinallyCanBeTryWithResources")
     public static void updateRatings(Context context, java.util.Map<String, Double> ratingsMap) {
         if (ratingsMap == null || ratingsMap.isEmpty()) return;
         SQLiteDatabase db = null;

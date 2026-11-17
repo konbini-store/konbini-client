@@ -25,6 +25,7 @@ import io.github.konbini.market.util.Prefs;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
@@ -32,17 +33,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.os.Build;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.LinearGradient;
-import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
-import android.graphics.Shader;
 import android.graphics.Typeface;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -67,41 +58,23 @@ public class MainActivity extends BaseActivity {
     private AppListAdapter adapter;
     private final ArrayList<AppShort> items = new ArrayList<>();
 
-    private ImageButton btnSearch;
-    private Button btnApps, btnGames, btnDownloads;
-    private TextView txtSection, txtMarket, txtPromoType, txtBrowseCategory;
-    private View loadingOverlay, promoMainRoot;
-    private ImageButton logo;
-//    private ImageView promoIcon1, promoIcon2, promoIcon3;
+    private View loadingOverlay;
     public ImageView bannerImage;
-//    private ImageView promoMirror1, promoMirror2, promoMirror3;
-    private PromoCategory currentPromoCategory;
     private static boolean showedUpdatePopup = false;
     private static Banner CACHE_BANNER = null;
     private static long BANNER_CACHE_TIME = 0L;
 
     public Api api;
 
-    private String supportedAbis;
-
-    private static class PromoCategory {
-        String code;
-        String label;
-        boolean isGame;
-        final ArrayList<AppShort> apps = new ArrayList<>();
-    }
-
     private static final ArrayList<AppShort> CACHE_ITEMS = new ArrayList<>();
-    private static final ArrayList<AppShort> CACHE_PROMO_SOURCE = new ArrayList<>();
     private static long CACHE_TIME = 0L;
 
     private final Handler bannerHandler = new Handler(Looper.getMainLooper());
     private final Runnable bannerRunnable = new Runnable() {
         @Override
+        @SuppressWarnings("deprecation")
         public void run() {
-            // Fetch a new banner
             new LoadBannersAsyncTask(MainActivity.this).execute();
-            // Schedule the next fetch (e.g., every 5 minutes = 300,000 ms)
             bannerHandler.postDelayed(this, 10000L);
         }
     };
@@ -113,26 +86,16 @@ public class MainActivity extends BaseActivity {
         setContentView(R.layout.activity_main);
 
         loadingOverlay = findViewById(R.id.loadingOverlay);
-        logo = (ImageButton) findViewById(R.id.logo);
-        list = (ListView) findViewById(R.id.list);
-        btnApps = (Button) findViewById(R.id.btnApps);
-        btnGames = (Button) findViewById(R.id.btnGames);
-        btnDownloads = (Button) findViewById(R.id.btnDownloads);
-        btnSearch = (ImageButton) findViewById(R.id.btnSearch);
-        txtMarket = (TextView) findViewById(R.id.txtMarket);
+        ImageButton logo = findViewById(R.id.logo);
+        list = findViewById(R.id.list);
+        Button btnApps = findViewById(R.id.btnApps);
+        Button btnGames = findViewById(R.id.btnGames);
+        Button btnDownloads = findViewById(R.id.btnDownloads);
+        ImageButton btnSearch = findViewById(R.id.btnSearch);
+        TextView txtMarket = findViewById(R.id.txtMarket);
 
         View header = getLayoutInflater().inflate(R.layout.main_list_header, list, false);
-//        promoMainRoot = header.findViewById(R.id.promoMainRoot);
-        bannerImage = (ImageView) header.findViewById(R.id.promoBannerImage);
-//        promoIcon1 = (ImageView) header.findViewById(R.id.promoIcon1);
-//        promoIcon2 = (ImageView) header.findViewById(R.id.promoIcon2);
-//        promoIcon3 = (ImageView) header.findViewById(R.id.promoIcon3);
-//        promoMirror1 = (ImageView) header.findViewById(R.id.promoMirror1);
-//        promoMirror2 = (ImageView) header.findViewById(R.id.promoMirror2);
-//        promoMirror3 = (ImageView) header.findViewById(R.id.promoMirror3);
-//        txtPromoType = (TextView) header.findViewById(R.id.txtPromoType);
-//        txtBrowseCategory = (TextView) header.findViewById(R.id.txtBrowseCategory);
-        txtSection = (TextView) header.findViewById(R.id.txtSection);
+        bannerImage = header.findViewById(R.id.promoBannerImage);
         list.addHeaderView(header, null, false);
 
         this.api = Api.getInstance(this);
@@ -166,14 +129,6 @@ public class MainActivity extends BaseActivity {
                 Log.e("onCreate@MainActivity", "Failed to open options menu: ", e);
             }
         });
-//        promoMainRoot.setOnClickListener(v -> {
-//            if (currentPromoCategory == null) return;
-//            Intent i = new Intent(MainActivity.this, CategoryAppsActivity.class);
-//            i.putExtra("category", currentPromoCategory.code);
-//            i.putExtra("title", currentPromoCategory.label);
-//            i.putExtra("is_game", currentPromoCategory.isGame);
-//            startActivity(i);
-//        });
 
         try {
             int androidLogoRes = R.drawable.market_android_logo;
@@ -189,24 +144,6 @@ public class MainActivity extends BaseActivity {
         checkClientUpdateIfNeeded();
         getConsentFromUserThenSendAnalytics();
         scheduleUpdateChecks();
-    }
-
-//    private boolean checkPermissions() {
-//        String permission1 = Manifest.permission.WRITE_EXTERNAL_STORAGE;
-//        String permission2 = Manifest.permission.READ_EXTERNAL_STORAGE;
-//        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true;
-//        int status1 = ContextCompat.checkSelfPermission(this, permission1);
-//        int status2 = ContextCompat.checkSelfPermission(this, permission2);
-//        if (status1 == PackageManager.PERMISSION_DENIED ||
-//            status2 == PackageManager.PERMISSION_DENIED) {
-//            ActivityCompat.requestPermissions(this, new String[]{permission1, permission2}, 100);
-//        }
-//        return false;
-//    }
-
-    private boolean isRu() {
-//        String lang = java.util.Locale.getDefault().getLanguage();
-        return false; // lang != null && lang.toLowerCase().startsWith("ru");
     }
 
     private void scheduleUpdateChecks() {
@@ -325,6 +262,7 @@ public class MainActivity extends BaseActivity {
         });
     }
 
+    @SuppressWarnings("deprecation")
     private boolean restoreFromCache() {
         if (CACHE_ITEMS.isEmpty()) return false;
         if (System.currentTimeMillis() - CACHE_TIME > 120000L) return false;
@@ -350,25 +288,29 @@ public class MainActivity extends BaseActivity {
             }
             if (updated) adapter.notifyDataSetChanged();
         }).execute();
-//        if (!CACHE_PROMO_SOURCE.isEmpty()) bindPromo(CACHE_PROMO_SOURCE);
         showLoading(false);
         return true;
     }
 
     @SuppressWarnings("deprecation")
     private void loadTopContent() {
-        new LoadTopContentTask(this, api).execute();
+        final ProgressDialog pd = new ProgressDialog(this);
+        pd.setMessage(getString(R.string.loading));
+        pd.setCancelable(false);
+        pd.show();
+        new LoadTopContentTask(this, api, pd).execute();
     }
 
     @SuppressWarnings("deprecation")
     private static class LoadTopContentTask extends AsyncTask<Void, Void, ArrayList<AppShort>> {
         private final WeakReference<MainActivity> activityRef;
         private final Api api;
-        private final ArrayList<AppShort> promoSource = new ArrayList<>();
+        private final ProgressDialog pd;
 
-        LoadTopContentTask(MainActivity activity, Api api) {
+        LoadTopContentTask(MainActivity activity, Api api, ProgressDialog pd) {
             this.activityRef = new WeakReference<>(activity);
             this.api = api;
+            this.pd = pd;
         }
 
         protected void onPreExecute() {
@@ -391,6 +333,11 @@ public class MainActivity extends BaseActivity {
         protected void onPostExecute(ArrayList<AppShort> out) {
             MainActivity activity = activityRef.get();
             if (activity == null) return;
+            try {
+                if (pd != null) pd.dismiss();
+            } catch (Exception e) {
+                Log.e("LoadTopContentTask", Objects.requireNonNull(e.getMessage()));
+            }
             activity.showLoading(false);
             if (out == null) {
                 Toast.makeText(activity, R.string.error_network, Toast.LENGTH_SHORT).show();
@@ -400,8 +347,6 @@ public class MainActivity extends BaseActivity {
             activity.items.addAll(out);
             CACHE_ITEMS.clear();
             CACHE_ITEMS.addAll(out);
-            CACHE_PROMO_SOURCE.clear();
-            CACHE_PROMO_SOURCE.addAll(promoSource);
             CACHE_TIME = System.currentTimeMillis();
             activity.adapter.refreshInstalledPackages();
             activity.adapter.notifyDataSetChanged();
@@ -420,106 +365,17 @@ public class MainActivity extends BaseActivity {
                 if (updated) activity.adapter.notifyDataSetChanged();
             }).execute();
         }
-    }
 
-//    private void bindPromo(ArrayList<AppShort> source) {
-//        if (source == null || source.size() == 0) return;
-//        HashMap<String, PromoCategory> map = new HashMap<String, PromoCategory>();
-//        for (int i = 0; i < source.size(); i++) {
-//            AppShort a = source.get(i);
-//            if (a.categoryCode == null || a.categoryCode.length() == 0) continue;
-//            String key = a.categoryCode;
-//            PromoCategory pc = map.get(key);
-//            if (pc == null) {
-//                pc = new PromoCategory();
-//                pc.code = a.categoryCode;
-//                pc.label = a.categoryLabel;
-//                pc.isGame = false;
-//                map.put(key, pc);
-//            }
-//            if (pc.apps.size() < 6) pc.apps.add(a);
-//        }
-//        if (map.isEmpty()) return;
-//        ArrayList<PromoCategory> cats = new ArrayList<PromoCategory>(map.values());
-//        currentPromoCategory = cats.get(new Random().nextInt(cats.size()));
-//        txtPromoType.setText(currentPromoCategory.isGame ? getString(R.string.games).toLowerCase() : getString(R.string.apps).toLowerCase());
-//        txtBrowseCategory.setText(String.format("Browse %s", currentPromoCategory.label));
-//
-//        bindPromoIcon(promoIcon1, promoMirror1, currentPromoCategory.apps, 0);
-//        bindPromoIcon(promoIcon2, promoMirror2, currentPromoCategory.apps, 1);
-//        bindPromoIcon(promoIcon3, promoMirror3, currentPromoCategory.apps, 2);
-//    }
-
-    private void bindPromoIcon(final ImageView iv, final ImageView mirror, ArrayList<AppShort> apps, int idx) {
-        if (apps.size() <= idx) {
-            iv.setImageResource(R.drawable.icon_placeholder);
-            mirror.setImageResource(R.drawable.icon_placeholder);
-            return;
-        }
-        AppShort a = apps.get(idx);
-        final String url = a.icon;
-        ImageLoader.load(this, url, iv, R.drawable.icon_placeholder);
-        iv.postDelayed(new Runnable() {
-            public void run() { updateMirrorFromImageView(iv, mirror, 0); }
-        }, 250);
-    }
-
-    private void updateMirrorFromImageView(final ImageView source, final ImageView mirror, final int attempt) {
-        try {
-            Drawable d = source.getDrawable();
-            if (d == null) {
-                if (attempt < 8) {
-                    source.postDelayed(new Runnable() {
-                        public void run() { updateMirrorFromImageView(source, mirror, attempt + 1); }
-                    }, 200);
-                }
-                return;
+        protected void onCancelled(ArrayList<AppShort> out) {
+            try {
+                if (pd != null) pd.dismiss();
+            } catch (Exception e) {
+                Log.e("LoadTopContentTask", Objects.requireNonNull(e.getMessage()));
             }
-            Bitmap original = drawableToBitmap(d, source.getWidth() > 0 ? source.getWidth() : 44, source.getHeight() > 0 ? source.getHeight() : 44);
-            if (original == null) return;
-            Bitmap reflected = createReflectionBitmap(original);
-            if (reflected != null) mirror.setImageBitmap(reflected);
-        } catch (Throwable e) { }
-    }
-
-    private Bitmap drawableToBitmap(Drawable drawable, int reqW, int reqH) {
-        try {
-            if (drawable instanceof BitmapDrawable) {
-                Bitmap b = ((BitmapDrawable) drawable).getBitmap();
-                if (b != null) return b;
+            MainActivity activity = activityRef.get();
+            if (activity != null) {
+                activity.showLoading(false);
             }
-            int w = reqW > 0 ? reqW : 44;
-            int h = reqH > 0 ? reqH : 44;
-            Bitmap bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-            Canvas canvas = new Canvas(bitmap);
-            drawable.setBounds(0, 0, w, h);
-            drawable.draw(canvas);
-            return bitmap;
-        } catch (Throwable e) {
-            return null;
-        }
-    }
-
-    private Bitmap createReflectionBitmap(Bitmap original) {
-        try {
-            int width = original.getWidth();
-            int height = original.getHeight();
-            if (width <= 0 || height <= 1) return null;
-            int reflectionHeight = Math.max(8, height / 2);
-            Matrix matrix = new Matrix();
-            matrix.preScale(1, -1);
-            Bitmap reflection = Bitmap.createBitmap(original, 0, height - reflectionHeight, width, reflectionHeight, matrix, false);
-            Bitmap bitmapWithReflection = Bitmap.createBitmap(width, reflectionHeight, Bitmap.Config.ARGB_8888);
-            Canvas canvas = new Canvas(bitmapWithReflection);
-            canvas.drawBitmap(reflection, 0, 0, null);
-            Paint paint = new Paint();
-            LinearGradient shader = new LinearGradient(0, 0, 0, reflectionHeight, 0x66ffffff, 0x00ffffff, Shader.TileMode.CLAMP);
-            paint.setShader(shader);
-            paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
-            canvas.drawRect(0, 0, width, reflectionHeight, paint);
-            return bitmapWithReflection;
-        } catch (Throwable e) {
-            return null;
         }
     }
 
@@ -527,24 +383,19 @@ public class MainActivity extends BaseActivity {
         if (loadingOverlay != null) loadingOverlay.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
-
-    // TODO
     @SuppressWarnings("deprecation")
     private void checkClientUpdateIfNeeded() {
         if (showedUpdatePopup) return;
-        final boolean ru = isRu();
-        new CheckClientUpdateTask(this, ru).execute();
+        new CheckClientUpdateTask(this).execute();
         showedUpdatePopup = true;
     }
 
     @SuppressWarnings("deprecation")
     private static class CheckClientUpdateTask extends AsyncTask<Void, Void, ClientUpdate> {
         private final WeakReference<MainActivity> activityRef;
-        private final boolean ru;
 
-        CheckClientUpdateTask(MainActivity activity, boolean ru) {
+        CheckClientUpdateTask(MainActivity activity) {
             this.activityRef = new WeakReference<>(activity);
-            this.ru = ru;
         }
 
         protected ClientUpdate doInBackground(Void... params) {
@@ -624,6 +475,7 @@ public class MainActivity extends BaseActivity {
     }
 
     // TODO
+    @SuppressWarnings("deprecation")
     private void sendAnalyticsIfAllowed() {
         Boolean consent = Prefs.getAnalyticsConsent(this);
         if (consent == null || !consent) return;
