@@ -139,8 +139,11 @@ public class LoadReviewsAsyncTask extends AsyncTask<Void, Void, LoadReviewsAsync
             activity.msg("Network error");
             activity.txtReviewsInfo.setText(String.format(activity.getString(R.string.reviews_count), 0));
             activity.hasOwnReview = false;
+            activity.layoutUserReviewProfile.setVisibility(View.VISIBLE);
             activity.ratingAddReview.setVisibility(View.VISIBLE);
             activity.txtreviewinfo.setVisibility(View.VISIBLE);
+            activity.edtAddReviewText.setVisibility(GONE);
+            activity.layoutReviewButtons.setVisibility(GONE);
             return;
         }
 
@@ -165,8 +168,11 @@ public class LoadReviewsAsyncTask extends AsyncTask<Void, Void, LoadReviewsAsync
         activity.btnTabReviews.setText(String.format(activity.getString(R.string.reviews_count2),
                 activity.reviews.size()));
         activity.txtHeaderRating.setText(ratingHeader);
+        activity.layoutUserReviewProfile.setVisibility(activity.hasOwnReview ? GONE : View.VISIBLE);
         activity.ratingAddReview.setVisibility(activity.hasOwnReview ? GONE : View.VISIBLE);
         activity.txtreviewinfo.setVisibility(activity.hasOwnReview ? GONE : View.VISIBLE);
-        activity.adapter.notifyDataSetChanged();
+        activity.edtAddReviewText.setVisibility(GONE);
+        activity.layoutReviewButtons.setVisibility(GONE);
+        activity.bindReviews();
     }
 }

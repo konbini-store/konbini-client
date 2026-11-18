@@ -184,6 +184,50 @@
                 android:orientation="vertical"
                 android:background="#ffffff">
 
+                <LinearLayout
+                    android:id="@+id/layoutUserReviewProfile"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="8dp"
+                    android:background="@drawable/bg_press_item"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:id="@+id/imgUserReviewAvatar"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/icon_placeholder"
+                        android:scaleType="centerCrop" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginLeft="8dp"
+                        android:layout_marginStart="8dp">
+
+                        <TextView
+                            android:id="@+id/txtUserReviewName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/profile"
+                            android:textColor="#222222"
+                            android:textStyle="bold"
+                            android:textSize="16sp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/profile"
+                            android:textColor="#777777"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
                 <TextView
                     android:id="@+id/txtreviewinfo"
                     android:layout_width="match_parent"
@@ -208,6 +252,55 @@
                     android:clickable="true"
                     android:focusable="true" />
 
+                <EditText
+                    android:id="@+id/edtAddReviewText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:hint="@string/your_review"
+                    android:gravity="top|left"
+                    android:minLines="3"
+                    android:inputType="textLongMessage|textMultiLine"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/layoutReviewButtons"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="end"
+                    android:layout_margin="8dp"
+                    android:visibility="gone">
+
+                    <Button
+                        android:id="@+id/btnCancelReview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="5dp"
+                        android:paddingEnd="5dp"
+                        android:paddingLeft="5dp"
+                        android:paddingRight="5dp"
+                        android:paddingTop="-1dp"
+                        android:paddingBottom="-1dp"
+                        android:background="@drawable/bg_tab_button"
+                        android:text="@string/cancel_review"
+                        android:layout_marginRight="8dp"
+                        android:layout_marginEnd="8dp" />
+
+                    <Button
+                        android:id="@+id/btnPostReview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="5dp"
+                        android:paddingEnd="5dp"
+                        android:paddingLeft="5dp"
+                        android:paddingRight="5dp"
+                        android:paddingTop="-1dp"
+                        android:paddingBottom="-1dp"
+                        android:background="@drawable/bg_tab_button"
+                        android:text="@string/send_review" />
+                </LinearLayout>
+
                 <View
                     android:layout_width="match_parent"
                     android:layout_marginLeft="8dp"
@@ -219,16 +312,13 @@
                     android:layout_marginBottom="8dp"
                     android:background="@android:color/darker_gray"/>
 
-                <ListView
-                    android:id="@+id/listReviews"
+                <LinearLayout
+                    android:id="@+id/reviewsListContainer"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="#ffffff"
-                    android:cacheColorHint="#00000000"
-                    android:divider="#e7e7e7"
-                    android:dividerHeight="1dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
                     android:layout_marginTop="8dp"
-                    android:listSelector="@drawable/bg_press_item" />
+                    android:background="#ffffff" />
             </LinearLayout>
         </ScrollView>
 

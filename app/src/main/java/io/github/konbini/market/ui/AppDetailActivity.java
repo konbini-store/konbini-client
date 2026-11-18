@@ -91,7 +91,6 @@ public class AppDetailActivity extends BaseActivity {
     private Button btnTabVersions;
     public Button btnTabReviews;
     public final ArrayList<ReviewItem> reviews = new ArrayList<>();
-    public ReviewAdapter adapter;
 
     public String pkgName = "";
     private final String selectedVersion = "";
@@ -107,6 +106,25 @@ public class AppDetailActivity extends BaseActivity {
     public boolean descCollapsed = true;
 
     public Api api;
+
+    public LinearLayout layoutUserReviewProfile;
+    public ImageView imgUserReviewAvatar;
+    public TextView txtUserReviewName;
+    public EditText edtAddReviewText;
+    public LinearLayout layoutReviewButtons;
+    public Button btnPostReview, btnCancelReview;
+    public int selectedRating = 0;
+    public LinearLayout reviewsListContainer;
+
+    public void updateUserReviewProfile() {
+        if (txtUserReviewName != null) {
+            txtUserReviewName.setText(Prefs.getUsername(this));
+        }
+        if (imgUserReviewAvatar != null) {
+            ImageLoader.load(this, io.github.konbini.market.net.Api.avatarUrl(this, Prefs.getAvatar(this)),
+                    imgUserReviewAvatar, R.drawable.icon_placeholder);
+        }
+    }
 
     private final BroadcastReceiver dlReceiver = new BroadcastReceiver() {
         @Override
@@ -153,7 +171,7 @@ public class AppDetailActivity extends BaseActivity {
         reviewsTabContainer = findViewById(R.id.reviewsTabContainer);
         detailsScrollView = findViewById(R.id.detailsScrollView);
         reviewsScrollView = findViewById(R.id.reviewsScrollView);
-        ListView list = findViewById(R.id.listReviews);
+        reviewsListContainer = findViewById(R.id.reviewsListContainer);
         listVersions = findViewById(R.id.listVersions);
         btnTabDetails = findViewById(R.id.btnTabDetails);
         btnTabVersions = findViewById(R.id.btnTabVersions);
@@ -175,6 +193,84 @@ public class AppDetailActivity extends BaseActivity {
         screensContainer = header.findViewById(R.id.screensContainer);
         ratingAddReview = findViewById(R.id.ratingAddReview);
         txtreviewinfo = findViewById(R.id.txtreviewinfo);
+        layoutUserReviewProfile = findViewById(R.id.layoutUserReviewProfile);
+        imgUserReviewAvatar = findViewById(R.id.imgUserReviewAvatar);
+        txtUserReviewName = findViewById(R.id.txtUserReviewName);
+
+        layoutUserReviewProfile.setOnClickListener(v -> {
+            if (!Prefs.isLoggedIn(AppDetailActivity.this)) {
+                startActivity(new Intent(AppDetailActivity.this, LoginActivity.class));
+                return;
+            }
+            startActivity(new Intent(AppDetailActivity.this, ProfileActivity.class));
+        });
+
+        txtUserReviewName.setOnClickListener(v -> {
+            if (!Prefs.isLoggedIn(AppDetailActivity.this)) {
+                startActivity(new Intent(AppDetailActivity.this, LoginActivity.class));
+                return;
+            }
+            final EditText input = new EditText(AppDetailActivity.this);
+            input.setText(Prefs.getUsername(AppDetailActivity.this));
+            input.setSelection(input.getText().length());
+
+            new AlertDialog.Builder(AppDetailActivity.this)
+                    .setTitle("Edit username")
+                    .setView(input)
+                    .setPositiveButton("OK", (dialog, which) -> {
+                        String newName = input.getText().toString().trim();
+                        if (newName.length() > 0) {
+                            Prefs.setUsername(AppDetailActivity.this, newName);
+                            updateUserReviewProfile();
+
+        edtAddReviewText = findViewById(R.id.edtAddReviewText);
+        layoutReviewButtons = findViewById(R.id.layoutReviewButtons);
+        btnPostReview = findViewById(R.id.btnPostReview);
+        btnCancelReview = findViewById(R.id.btnCancelReview);
+
+        btnPostReview.setOnClickListener(view -> {
+            String text = edtAddReviewText.getText().toString().trim();
+            sendReview(text, selectedRating);
+            edtAddReviewText.setVisibility(View.GONE);
+            layoutReviewButtons.setVisibility(View.GONE);
+            edtAddReviewText.setText("");
+            ratingAddReview.setRating(0f);
+        });
+
+        btnCancelReview.setOnClickListener(view -> {
+            edtAddReviewText.setVisibility(View.GONE);
+            layoutReviewButtons.setVisibility(View.GONE);
+            edtAddReviewText.setText("");
+            ratingAddReview.setRating(0f);
+        });
+                        }
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        });
+
+        updateUserReviewProfile();
+
+        edtAddReviewText = findViewById(R.id.edtAddReviewText);
+        layoutReviewButtons = findViewById(R.id.layoutReviewButtons);
+        btnPostReview = findViewById(R.id.btnPostReview);
+        btnCancelReview = findViewById(R.id.btnCancelReview);
+
+        btnPostReview.setOnClickListener(v -> {
+            String text = edtAddReviewText.getText().toString().trim();
+            sendReview(text, selectedRating);
+            edtAddReviewText.setVisibility(View.GONE);
+            layoutReviewButtons.setVisibility(View.GONE);
+            edtAddReviewText.setText("");
+            ratingAddReview.setRating(0f);
+        });
+
+        btnCancelReview.setOnClickListener(v -> {
+            edtAddReviewText.setVisibility(View.GONE);
+            layoutReviewButtons.setVisibility(View.GONE);
+            edtAddReviewText.setText("");
+            ratingAddReview.setRating(0f);
+        });
 
         btnInstall = findViewById(R.id.btnInstall);
         btnOpen = findViewById(R.id.btnOpen);
@@ -185,8 +281,7 @@ public class AppDetailActivity extends BaseActivity {
         downloadPanel = findViewById(R.id.downloadPanel);
         installButtons = findViewById(R.id.installButtons);
 
-        adapter = new ReviewAdapter();
-        list.setAdapter(adapter);
+
 
 //        list.setOnItemClickListener((parent, view, position, id) -> {
 //            if (position < 0 || position >= reviews.size()) return;
@@ -232,29 +327,13 @@ public class AppDetailActivity extends BaseActivity {
             int rating = (int) Math.ceil(stars);
             if (rating < 1) rating = 1;
             if (rating > 5) rating = 5;
-            rb.setRating(rating);
-            showAddReviewDialog(rating);
-            rb.setRating(0f);
+            selectedRating = rating;
+            rb.setRating(selectedRating);
+            edtAddReviewText.setVisibility(View.VISIBLE);
+            layoutReviewButtons.setVisibility(View.VISIBLE);
+            edtAddReviewText.requestFocus();
             return true;
         });
-//                (View v, MotionEvent event) -> {
-//            v.performClick();
-//            if (event.getAction() != MotionEvent.ACTION_UP) return true;
-//            if (!Prefs.isLoggedIn(AppDetailActivity.this)) {
-//                startActivity(new Intent(AppDetailActivity.this, LoginActivity.class));
-//                return true;
-//            }
-//            if (hasOwnReview) return true;
-//            RatingBar rb = (RatingBar) v;
-//            float stars = rb.getNumStars() * event.getX() / Math.max(1f, rb.getWidth());
-//            int rating = (int) Math.ceil(stars);
-//            if (rating < 1) rating = 1;
-//            if (rating > 5) rating = 5;
-//            rb.setRating(rating);
-//            showAddReviewDialog(rating);
-//            rb.setRating(0f);
-//            return true;
-//        });
 
         api = Api.getInstance(AppDetailActivity.this);
         if (!handleIntent(getIntent()) || appId == 0) {
@@ -293,6 +372,28 @@ public class AppDetailActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        updateUserReviewProfile();
+
+        edtAddReviewText = findViewById(R.id.edtAddReviewText);
+        layoutReviewButtons = findViewById(R.id.layoutReviewButtons);
+        btnPostReview = findViewById(R.id.btnPostReview);
+        btnCancelReview = findViewById(R.id.btnCancelReview);
+
+        btnPostReview.setOnClickListener(v -> {
+            String text = edtAddReviewText.getText().toString().trim();
+            sendReview(text, selectedRating);
+            edtAddReviewText.setVisibility(View.GONE);
+            layoutReviewButtons.setVisibility(View.GONE);
+            edtAddReviewText.setText("");
+            ratingAddReview.setRating(0f);
+        });
+
+        btnCancelReview.setOnClickListener(v -> {
+            edtAddReviewText.setVisibility(View.GONE);
+            layoutReviewButtons.setVisibility(View.GONE);
+            edtAddReviewText.setText("");
+            ratingAddReview.setRating(0f);
+        });
         Log.d("AppDetailActivity", "onResume is called!");
         IntentFilter filter = new IntentFilter("io.github.konbini.market.DOWNLOAD_PROGRESS");
         if (Build.VERSION.SDK_INT >= 33) {
@@ -411,23 +512,7 @@ public class AppDetailActivity extends BaseActivity {
         return ri;
     }
 
-    private void showAddReviewDialog(final int presetRating) {
-        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_review, null);
-        TextView lbl = dialogView.findViewById(R.id.txtReviewRating);
-        final EditText edt = dialogView.findViewById(R.id.edtReviewText);
 
-        lbl.setText(String.format(getString(R.string.rating), presetRating));
-
-        new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.post_review))
-                .setView(dialogView)
-                .setPositiveButton(getString(R.string.send_review), (dialog, which) -> {
-                    String text = edt.getText().toString().trim();
-                    sendReview(text, presetRating);
-                })
-                .setNegativeButton(getString(R.string.cancel_review), null)
-                .show();
-    }
 
     @SuppressWarnings("deprecation")
     private void sendReview(final String text, final int rating) {
@@ -669,22 +754,13 @@ public class AppDetailActivity extends BaseActivity {
     }
 
 
-    public class ReviewAdapter extends BaseAdapter {
-        @Override
-        public int getCount() { return reviews.size(); }
-        @Override
-        public Object getItem(int position) { return reviews.get(position); }
-        @Override
-        public long getItemId(int position) { return position; }
+    public void bindReviews() {
+        if (reviewsListContainer == null) return;
+        reviewsListContainer.removeAllViews();
+        for (int i = 0; i < reviews.size(); i++) {
+            ReviewItem r = reviews.get(i);
+            View convertView = LayoutInflater.from(this).inflate(R.layout.list_item_review, reviewsListContainer, false);
 
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            convertView = convertView == null ?
-                    LayoutInflater.from(AppDetailActivity.this)
-                            .inflate(R.layout.list_item_review, parent,
-                                    false) : convertView;
-
-            ReviewItem r = reviews.get(position);
             ImageView imgUser = convertView.findViewById(R.id.imgUser);
             TextView txtUser = convertView.findViewById(R.id.txtUser);
             TextView txtDate = convertView.findViewById(R.id.txtDate);
@@ -698,9 +774,18 @@ public class AppDetailActivity extends BaseActivity {
             txtText.setText(r.text);
             rb.setRating(r.rating);
 
-            //TODO
-            ImageLoader.load(AppDetailActivity.this, r.avatar, imgUser, R.drawable.icon_placeholder);
-            return convertView;
+            ImageLoader.load(this, r.avatar, imgUser, R.drawable.icon_placeholder);
+
+            reviewsListContainer.addView(convertView);
+
+            if (i < reviews.size() - 1) {
+                View divider = new View(this);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, 1);
+                divider.setLayoutParams(params);
+                divider.setBackgroundColor(0xFFE7E7E7);
+                reviewsListContainer.addView(divider);
+            }
         }
     }
 }
