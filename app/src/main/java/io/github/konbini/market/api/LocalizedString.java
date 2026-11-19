@@ -57,6 +57,8 @@ public class LocalizedString {
     }
 
     public LocalizedString(JSONObject locales) {
+        if (locales == null)
+            return;
         Iterator<String> it = locales.keys();
 
         while (it.hasNext()) {

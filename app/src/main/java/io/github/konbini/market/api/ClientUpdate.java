@@ -17,6 +17,10 @@ public class ClientUpdate {
         this.versionCode = obj.getInt("version_code");
         this.versionName = obj.getString("version_name");
         this.updateUrl = obj.getString("update_url");
+        if (obj.has("notes")) {
+            this.notes = new LocalizedString(obj.optJSONObject("notes"));
+            return;
+        }
         this.notes = new LocalizedString();
         if (obj.has("notes_en"))
             this.notes.put("en", obj.getString("notes_en"));
